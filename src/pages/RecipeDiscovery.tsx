@@ -344,7 +344,7 @@ export default function RecipeDiscovery() {
           title: "Nigerian Pounded Yam with Egusi",
           description:
             "Smooth, stretchy yam dough served with rich egusi soup made from ground melon seeds, leafy vegetables, and assorted meats or fish.",
-          imageUrl: "/recipes/picai41.jpeg",
+          imageUrl: "/images/nigeria poundd yam with egusi soup.png",
           prepTime: 30,
           cookTime: 90,
           servings: 6,
