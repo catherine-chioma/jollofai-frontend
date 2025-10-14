@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import axios from "axios";
+import axios from "../config/api";
 
 interface User {
   id: string;
@@ -45,11 +45,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Base API URL - you can move this to an environment variable
-const API_BASE_URL = "http://localhost:3000";
-
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
+// Base API URL is now configured in config/api.ts
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -122,7 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
 
     try {
-      const response = await axios.post<AuthResponse>("/auth/signup", {
+      const response = await axios.post<AuthResponse>("/auth/register", {
         fullName,
         email,
         password,

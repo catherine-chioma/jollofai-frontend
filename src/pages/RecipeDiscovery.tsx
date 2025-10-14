@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../config/api";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import RecipeFilters from "../components/recipe/RecipeFilters";
@@ -55,7 +55,19 @@ export default function RecipeDiscovery() {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
-      // Comprehensive African Dishes Collection
+
+      // Try to fetch from real API first
+      try {
+        const response = await axios.get("/recipes");
+        if (response.data && Array.isArray(response.data)) {
+          setRecipes(response.data);
+          return;
+        }
+      } catch (apiError) {
+        console.log("API not available, using mock data");
+      }
+
+      // Fallback to mock data if API fails
       const mockRecipes: Recipe[] = [
         {
           id: "1",

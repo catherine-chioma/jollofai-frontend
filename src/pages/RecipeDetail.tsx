@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../config/api";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useToast } from "../components/Toast";
@@ -46,8 +46,147 @@ export default function RecipeDetail() {
   const fetchRecipe = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/recipes/${id}`);
-      setRecipe(response.data);
+
+      // First try to fetch from API
+      try {
+        const response = await axios.get(`/recipes/${id}`);
+        setRecipe(response.data);
+      } catch (apiError) {
+        // If API fails, use mock data that matches RecipeDiscovery
+        const mockRecipes = [
+          {
+            id: "1",
+            title: "Classic Jollof Rice",
+            description:
+              "The crown jewel of West African cuisine, a one-pot rice dish cooked with tomatoes, onions, peppers, and aromatic spices. Each country has its own variation, creating friendly rivalries over the 'best' Jollof.",
+            imageUrl: "/recipes/picai29.jpeg",
+            ingredients: [
+              "2 cups jasmine rice",
+              "3 tomatoes",
+              "1 onion",
+              "2 bell peppers",
+              "3 cloves garlic",
+              "1 tsp thyme",
+              "2 bay leaves",
+              "2 cups chicken stock",
+              "Salt and pepper",
+              "Vegetable oil",
+            ],
+            instructions: [
+              "Blend tomatoes and peppers",
+              "Fry the paste until oil separates",
+              "Add rice and stock",
+              "Season and simmer until tender",
+            ],
+            prepTime: 30,
+            cookTime: 45,
+            servings: 6,
+            difficulty: "Medium" as const,
+            cuisine: "Nigerian",
+            rating: 4.8,
+            reviews: 124,
+            nutrition: { calories: 320, protein: 8, carbs: 58, fat: 7 },
+          },
+          {
+            id: "2",
+            title: "Fufu with Egusi Soup",
+            description:
+              "A staple starchy side made from boiled and pounded plantains, cassava, or yams served with rich, hearty soup made with ground melon seeds and leafy vegetables.",
+            imageUrl: "/images/fufu and egusi soup.png",
+            ingredients: [
+              "2 cups yam flour",
+              "4 cups water",
+              "1 cup egusi seeds",
+              "Spinach leaves",
+              "Palm oil",
+              "Seasoning cubes",
+              "Assorted meat",
+            ],
+            instructions: [
+              "Boil water and gradually add yam flour",
+              "Stir continuously until smooth",
+              "Prepare egusi soup separately",
+              "Serve fufu with soup",
+            ],
+            prepTime: 60,
+            cookTime: 90,
+            servings: 8,
+            difficulty: "Hard" as const,
+            cuisine: "Nigerian",
+            rating: 4.9,
+            reviews: 189,
+            nutrition: { calories: 450, protein: 15, carbs: 65, fat: 18 },
+          },
+          {
+            id: "3",
+            title: "Ghanaian Kelewele",
+            description:
+              "Spicy fried plantain cubes seasoned with ginger, nutmeg, cloves, and cayenne pepper. A popular street food with a sweet and spicy flavor profile.",
+            imageUrl: "/images/ghana kelewele.png",
+            ingredients: [
+              "4 ripe plantains",
+              "1 tsp ginger powder",
+              "1/2 tsp nutmeg",
+              "1/4 tsp cloves",
+              "1 tsp cayenne pepper",
+              "Salt",
+              "Vegetable oil for frying",
+            ],
+            instructions: [
+              "Cut plantains into cubes",
+              "Mix spices with salt",
+              "Season plantain cubes",
+              "Deep fry until golden brown",
+            ],
+            prepTime: 15,
+            cookTime: 10,
+            servings: 4,
+            difficulty: "Easy" as const,
+            cuisine: "Ghanaian",
+            rating: 4.7,
+            reviews: 156,
+            nutrition: { calories: 280, protein: 3, carbs: 45, fat: 12 },
+          },
+          {
+            id: "9",
+            title: "Nigerian Amala and Ewedu",
+            description:
+              "Traditional Yoruba meal featuring smooth yam flour dumplings (amala) served with nutritious jute leaf soup (ewedu) and gbegiri. A beloved comfort food.",
+            imageUrl: "/images/Amla and ewedu.png",
+            ingredients: [
+              "2 cups yam flour",
+              "Ewedu leaves",
+              "Locust beans",
+              "Palm oil",
+              "Crayfish",
+              "Seasoning cubes",
+              "Salt",
+            ],
+            instructions: [
+              "Boil water and add yam flour gradually",
+              "Stir to avoid lumps",
+              "Prepare ewedu soup with blended leaves",
+              "Serve hot together",
+            ],
+            prepTime: 30,
+            cookTime: 45,
+            servings: 6,
+            difficulty: "Medium" as const,
+            cuisine: "Nigerian",
+            rating: 4.8,
+            reviews: 245,
+            nutrition: { calories: 350, protein: 12, carbs: 52, fat: 14 },
+          },
+          // Add more recipes as needed...
+        ];
+
+        const foundRecipe = mockRecipes.find((r) => r.id === id);
+        if (foundRecipe) {
+          setRecipe(foundRecipe);
+        } else {
+          setRecipe(null);
+        }
+      }
 
       // Check if recipe is saved
       const savedRecipes = JSON.parse(
@@ -57,6 +196,7 @@ export default function RecipeDetail() {
     } catch (error) {
       showToast("Failed to load recipe", "error");
       console.error("Recipe fetch error:", error);
+      setRecipe(null);
     } finally {
       setLoading(false);
     }
@@ -511,7 +651,7 @@ export default function RecipeDetail() {
             {/* Share Options */}
             <div className="space-y-4">
               {/* Native Share (Mobile) */}
-              {navigator.share && (
+              {navigator.share && typeof navigator.share === "function" && (
                 <button
                   onClick={shareViaWebAPI}
                   className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-primary/10 transition-all duration-200 border-2 border-primary/20"
