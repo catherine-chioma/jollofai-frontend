@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "../config/api";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
+import CookingProgress from "../components/CookingProgress";
+import AIChat from "../components/AIChat";
 import { useToast } from "../components/Toast";
 
 interface Recipe {
@@ -37,6 +39,8 @@ export default function RecipeDetail() {
     "ingredients" | "instructions" | "nutrition"
   >("ingredients");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isCookingMode, setIsCookingMode] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -262,7 +266,146 @@ export default function RecipeDetail() {
   };
 
   const startCooking = () => {
-    navigate(`/cooking/${id}`);
+    if (!recipe) return;
+    setIsCookingMode(true);
+    showToast("Entering cooking mode! 👨‍🍳", "success");
+  };
+
+  const exitCookingMode = () => {
+    setIsCookingMode(false);
+    showToast("Cooking mode ended", "info");
+  };
+
+  const onCookingComplete = () => {
+    setIsCookingMode(false);
+    showToast("🎉 Congratulations! You've completed the recipe!", "success");
+  };
+
+  // Convert recipe to cooking format with detailed steps
+  const convertToCookingSteps = (recipe: Recipe) => {
+    const steps = [];
+
+    // Add preparation steps
+    if (recipe.ingredients && recipe.ingredients.length > 0) {
+      steps.push({
+        id: "prep-ingredients",
+        instruction: `Gather and prepare all ingredients: ${recipe.ingredients.join(
+          ", "
+        )}. Wash, chop, and measure everything according to the recipe.`,
+        duration: Math.min(recipe.prepTime, 15),
+        type: "prep" as const,
+        tips: [
+          "Having all ingredients prepped before cooking is called 'mise en place'",
+          "This makes the cooking process much smoother",
+          "Chop vegetables uniformly for even cooking",
+        ],
+        equipment: ["Cutting board", "Sharp knife", "Measuring cups", "Bowls"],
+      });
+    }
+
+    // Convert instructions to detailed cooking steps
+    if (recipe.instructions && recipe.instructions.length > 0) {
+      recipe.instructions.forEach((instruction, index) => {
+        const stepDuration = Math.ceil(
+          recipe.cookTime / recipe.instructions.length
+        );
+
+        steps.push({
+          id: `cook-step-${index + 1}`,
+          instruction: instruction,
+          duration: stepDuration,
+          type:
+            index === recipe.instructions.length - 1
+              ? ("serve" as const)
+              : ("cook" as const),
+          tips: getCookingTips(instruction, recipe.cuisine),
+          equipment: getEquipmentForStep(instruction),
+        });
+      });
+    } else {
+      // Default cooking steps for common recipes
+      steps.push(
+        {
+          id: "cook-main",
+          instruction: `Cook the ${recipe.title} according to traditional ${recipe.cuisine} methods. Follow proper heat control and timing.`,
+          duration: recipe.cookTime - 5,
+          type: "cook" as const,
+          tips: [
+            "Taste and adjust seasoning as you cook",
+            "Maintain consistent heat level",
+            "Stir occasionally to prevent sticking",
+          ],
+        },
+        {
+          id: "final-rest",
+          instruction:
+            "Let the dish rest for a few minutes before serving. This allows flavors to settle and temperature to equalize.",
+          duration: 5,
+          type: "rest" as const,
+          tips: ["Resting improves flavor and texture", "Cover to keep warm"],
+        },
+        {
+          id: "serve",
+          instruction: `Serve your delicious ${recipe.title} while warm. Garnish as desired and enjoy!`,
+          duration: 0,
+          type: "serve" as const,
+          tips: [
+            "Serve immediately for best taste",
+            "Consider traditional accompaniments",
+          ],
+        }
+      );
+    }
+
+    return {
+      id: recipe.id,
+      title: recipe.title,
+      steps: steps,
+      totalTime: recipe.prepTime + recipe.cookTime,
+    };
+  };
+
+  const getCookingTips = (instruction: string, cuisine: string): string[] => {
+    const tips = [];
+    const lowerInstruction = instruction.toLowerCase();
+
+    if (lowerInstruction.includes("rice")) {
+      tips.push("Use 1:2 ratio of rice to liquid for fluffy rice");
+      tips.push("Don't lift the lid while rice is cooking");
+    }
+
+    if (lowerInstruction.includes("oil") || lowerInstruction.includes("fry")) {
+      tips.push("Heat oil until it shimmers but doesn't smoke");
+      tips.push("Test oil temperature with a small piece of food");
+    }
+
+    if (lowerInstruction.includes("onion")) {
+      tips.push("Cook onions until translucent for best flavor");
+      tips.push("Add a pinch of salt to help onions cook faster");
+    }
+
+    if (cuisine === "Nigerian" || cuisine === "West African") {
+      tips.push(
+        "Traditional Nigerian cooking emphasizes building flavors in layers"
+      );
+    }
+
+    return tips.length > 0 ? tips : ["Cook with patience and taste frequently"];
+  };
+
+  const getEquipmentForStep = (instruction: string): string[] => {
+    const equipment = [];
+    const lowerInstruction = instruction.toLowerCase();
+
+    if (lowerInstruction.includes("blend")) equipment.push("Blender");
+    if (lowerInstruction.includes("fry") || lowerInstruction.includes("cook"))
+      equipment.push("Pan or pot");
+    if (lowerInstruction.includes("stir")) equipment.push("Wooden spoon");
+    if (lowerInstruction.includes("chop") || lowerInstruction.includes("dice"))
+      equipment.push("Knife", "Cutting board");
+    if (lowerInstruction.includes("measure")) equipment.push("Measuring cups");
+
+    return equipment.length > 0 ? equipment : ["Basic cooking utensils"];
   };
 
   const shareRecipe = () => {
@@ -379,6 +522,65 @@ export default function RecipeDetail() {
     );
   }
 
+  // Render cooking mode if active
+  if (isCookingMode) {
+    const cookingRecipe = convertToCookingSteps(recipe);
+    return (
+      <div className="h-screen bg-gray-50">
+        <CookingProgress
+          recipe={cookingRecipe}
+          onComplete={onCookingComplete}
+          onExit={exitCookingMode}
+          className="h-full"
+        />
+
+        {/* AI Chat Overlay */}
+        {showAIChat && (
+          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[80vh] overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b">
+                <h3 className="font-semibold">Cooking Assistant</h3>
+                <button
+                  onClick={() => setShowAIChat(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <AIChat
+                context={{
+                  type: "recipe",
+                  data: recipe,
+                }}
+                className="h-full"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* AI Chat Button */}
+        <button
+          onClick={() => setShowAIChat(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors flex items-center justify-center z-40"
+        >
+          <span className="text-xl">🤖</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -463,7 +665,15 @@ export default function RecipeDetail() {
             onClick={startCooking}
             className="flex-1 bg-primary hover:bg-primary/90 text-white py-3"
           >
-            Start Cooking
+            🍳 Start Cooking Mode
+          </Button>
+          <Button
+            onClick={() => setShowAIChat(true)}
+            variant="secondary"
+            className="px-6 py-3"
+          >
+            <span className="mr-2">🤖</span>
+            Ask AI
           </Button>
           <Button
             onClick={toggleSaveRecipe}
@@ -826,6 +1036,42 @@ export default function RecipeDetail() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Chat Modal */}
+      {showAIChat && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[80vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-semibold text-lg">Cooking Assistant</h3>
+              <button
+                onClick={() => setShowAIChat(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <AIChat
+              context={{
+                type: "recipe",
+                data: recipe,
+              }}
+              className="h-full"
+            />
           </div>
         </div>
       )}
