@@ -45,6 +45,14 @@ export const API_ENDPOINTS = {
     SYNC: '/vendors/sync',
   },
   
+  // AI & Chat
+  AI: {
+    CHAT: '/ai/chat',
+    COOKING_ASSISTANCE: '/ai/cooking-assistance',
+    INGREDIENT_SUGGESTIONS: '/ai/ingredient-suggestions',
+    RECIPE_MODIFICATIONS: '/ai/recipe-modifications',
+  },
+  
   // Chat
   CHAT: {
     MESSAGE: '/chat/message',
