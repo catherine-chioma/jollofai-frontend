@@ -16,6 +16,7 @@ import Ingredients from "./pages/Ingredients";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
+import AIChatPage from "./pages/AIChatPage";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/recipe/:id" element={<RecipeDetail />} />
                 <Route path="/marketplace" element={<VendorMarketplace />} />
                 <Route path="/ingredients" element={<Ingredients />} />
+                <Route path="/ai-chat" element={<AIChatPage />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
