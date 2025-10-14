@@ -12,6 +12,11 @@ export default function Navbar() {
 
   const navLinks = [
     { to: "/", label: "🏠 Home" },
+    { to: "/recipe-generator", label: "🍽️ Recipes" },
+    { to: "/recipe-discovery", label: "🔍 Discover" },
+    { to: "/ingredients", label: "🥬 Ingredients" },
+    { to: "/marketplace", label: "🛒 Marketplace" },
+    { to: "/ai-chat", label: "🤖 AI Chat" },
     { to: "/about", label: "ℹ️ About" },
   ];
 
