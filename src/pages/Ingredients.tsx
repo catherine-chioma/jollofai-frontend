@@ -5,6 +5,7 @@ interface Ingredient {
   name: string;
   category: string;
   description: string;
+  imageUrl?: string;
   nutritionPer100g: {
     calories: number;
     protein: number;
@@ -25,6 +26,7 @@ const SAMPLE_INGREDIENTS: Ingredient[] = [
     category: "Grains",
     description:
       "Long-grain rice with a subtle floral aroma, perfect for Jollof rice.",
+    imageUrl: "/ingredients/jasmine-rice.jpg",
     nutritionPer100g: {
       calories: 365,
       protein: 7,
@@ -43,6 +45,7 @@ const SAMPLE_INGREDIENTS: Ingredient[] = [
     category: "Vegetables",
     description:
       "Meaty tomatoes with low water content, ideal for rich stews and sauces.",
+    imageUrl: "/ingredients/roma-tomatoes.jpg",
     nutritionPer100g: {
       calories: 18,
       protein: 0.9,
@@ -61,6 +64,7 @@ const SAMPLE_INGREDIENTS: Ingredient[] = [
     category: "Spices",
     description:
       "Hot peppers with fruity flavor, essential for authentic West African cuisine.",
+    imageUrl: "/ingredients/scotch-bonnet-peppers.jpg",
     nutritionPer100g: {
       calories: 40,
       protein: 1.9,
@@ -79,6 +83,7 @@ const SAMPLE_INGREDIENTS: Ingredient[] = [
     category: "Fruits",
     description:
       "Starchy cooking bananas, versatile for both sweet and savory dishes.",
+    imageUrl: "/ingredients/green-plantains.jpg",
     nutritionPer100g: {
       calories: 122,
       protein: 1.3,
@@ -125,6 +130,363 @@ const SAMPLE_INGREDIENTS: Ingredient[] = [
     substitutes: ["Ground Ginger", "Galangal"],
     origin: "Southeast Asia",
     season: "Year-round",
+  },
+  {
+    id: "cassava",
+    name: "Cassava Root",
+    category: "Vegetables",
+    description:
+      "Starchy root vegetable, staple food across Africa. Can be boiled, fried, or processed into flour.",
+    nutritionPer100g: {
+      calories: 160,
+      protein: 1.4,
+      carbs: 38,
+      fat: 0.3,
+      fiber: 1.8,
+    },
+    commonUses: ["Fufu", "Cassava Chips", "Tapioca"],
+    substitutes: ["Sweet Potato", "Yam", "Potato"],
+    origin: "West Africa",
+    season: "Year-round",
+  },
+  {
+    id: "yam",
+    name: "White Yam",
+    category: "Vegetables",
+    description:
+      "Large tuber with white flesh, essential for fufu and pounded yam.",
+    nutritionPer100g: {
+      calories: 118,
+      protein: 1.5,
+      carbs: 28,
+      fat: 0.2,
+      fiber: 4.1,
+    },
+    commonUses: ["Pounded Yam", "Boiled Yam", "Yam Porridge"],
+    substitutes: ["Sweet Potato", "Cassava", "Potato"],
+    origin: "West Africa",
+    season: "Dry season",
+  },
+  {
+    id: "egusi",
+    name: "Melon Seeds (Egusi)",
+    category: "Proteins",
+    description:
+      "Ground melon seeds that form the base of Nigeria's famous Egusi soup.",
+    nutritionPer100g: {
+      calories: 557,
+      protein: 28,
+      carbs: 15,
+      fat: 47,
+      fiber: 11,
+    },
+    commonUses: ["Egusi Soup", "Melon Seed Stew"],
+    substitutes: ["Pumpkin Seeds", "Sunflower Seeds"],
+    origin: "West Africa",
+    season: "Year-round",
+  },
+  {
+    id: "okra",
+    name: "Fresh Okra",
+    category: "Vegetables",
+    description:
+      "Green pods with natural thickening properties, popular in soups and stews.",
+    nutritionPer100g: {
+      calories: 33,
+      protein: 1.9,
+      carbs: 7,
+      fat: 0.2,
+      fiber: 3.2,
+    },
+    commonUses: ["Okra Soup", "Gumbo", "Bamya"],
+    substitutes: ["Frozen Okra", "Cornstarch (thickening)"],
+    origin: "East Africa",
+    season: "Summer",
+  },
+  {
+    id: "berbere",
+    name: "Berbere Spice Mix",
+    category: "Spices",
+    description:
+      "Ethiopian spice blend with chili peppers, fenugreek, and aromatic spices.",
+    nutritionPer100g: {
+      calories: 315,
+      protein: 14,
+      carbs: 64,
+      fat: 6,
+      fiber: 35,
+    },
+    commonUses: ["Doro Wat", "Kitfo", "Ethiopian Stews"],
+    substitutes: ["Paprika + Cayenne", "Harissa"],
+    origin: "Ethiopia",
+    season: "Year-round",
+  },
+  {
+    id: "coconut",
+    name: "Fresh Coconut",
+    category: "Fruits",
+    description:
+      "Tropical fruit providing milk, oil, and meat for cooking and desserts.",
+    nutritionPer100g: {
+      calories: 354,
+      protein: 3.3,
+      carbs: 15,
+      fat: 33,
+      fiber: 9,
+    },
+    commonUses: ["Coconut Rice", "Coconut Soup", "Desserts"],
+    substitutes: ["Coconut Milk (canned)", "Coconut Flakes"],
+    origin: "Coastal Africa",
+    season: "Year-round",
+  },
+  {
+    id: "groundnuts",
+    name: "Groundnuts (Peanuts)",
+    category: "Proteins",
+    description:
+      "Versatile legumes used whole, ground, or as paste in African cuisine.",
+    nutritionPer100g: {
+      calories: 567,
+      protein: 26,
+      carbs: 16,
+      fat: 49,
+      fiber: 9,
+    },
+    commonUses: ["Groundnut Soup", "Suya Spice", "Ndolé"],
+    substitutes: ["Almonds", "Cashews"],
+    origin: "West Africa",
+    season: "Dry season",
+  },
+  {
+    id: "bitter-leaf",
+    name: "Bitter Leaf",
+    category: "Vegetables",
+    description:
+      "Dark green leafy vegetable with bitter taste, rich in nutrients.",
+    nutritionPer100g: {
+      calories: 22,
+      protein: 3.1,
+      carbs: 4.2,
+      fat: 0.3,
+      fiber: 2.8,
+    },
+    commonUses: ["Bitter Leaf Soup", "Ndolé", "Ofe Onugbu"],
+    substitutes: ["Spinach", "Kale", "Collard Greens"],
+    origin: "West/Central Africa",
+    season: "Rainy season",
+  },
+  {
+    id: "teff",
+    name: "Teff Grain",
+    category: "Grains",
+    description:
+      "Tiny grain used to make injera, Ethiopia's staple sourdough flatbread.",
+    nutritionPer100g: {
+      calories: 367,
+      protein: 13,
+      carbs: 73,
+      fat: 2.4,
+      fiber: 8,
+    },
+    commonUses: ["Injera", "Teff Porridge", "Gluten-free Baking"],
+    substitutes: ["Buckwheat Flour", "Quinoa Flour"],
+    origin: "Ethiopia",
+    season: "Year-round",
+  },
+  {
+    id: "baobab",
+    name: "Baobab Fruit Powder",
+    category: "Fruits",
+    description:
+      "Superfruit powder rich in vitamin C, fiber, and antioxidants.",
+    nutritionPer100g: {
+      calories: 250,
+      protein: 3,
+      carbs: 50,
+      fat: 0.5,
+      fiber: 45,
+    },
+    commonUses: ["Smoothies", "Porridge", "Traditional Drinks"],
+    substitutes: ["Acai Powder", "Vitamin C Supplements"],
+    origin: "Savanna Africa",
+    season: "Dry season",
+  },
+  {
+    id: "moringa",
+    name: "Moringa Leaves",
+    category: "Vegetables",
+    description:
+      "Nutrient-dense leaves from the 'miracle tree', used fresh or dried.",
+    nutritionPer100g: {
+      calories: 64,
+      protein: 9.4,
+      carbs: 8.3,
+      fat: 1.4,
+      fiber: 2,
+    },
+    commonUses: ["Moringa Soup", "Tea", "Smoothies"],
+    substitutes: ["Spinach", "Kale"],
+    origin: "East Africa",
+    season: "Year-round",
+  },
+  {
+    id: "millet",
+    name: "Pearl Millet",
+    category: "Grains",
+    description:
+      "Drought-resistant grain, staple food in Sahel regions of Africa.",
+    nutritionPer100g: {
+      calories: 378,
+      protein: 11,
+      carbs: 73,
+      fat: 4.2,
+      fiber: 8.5,
+    },
+    commonUses: ["Millet Porridge", "Tô", "Millet Bread"],
+    substitutes: ["Quinoa", "Brown Rice", "Bulgur"],
+    origin: "West Africa",
+    season: "Dry season",
+  },
+  {
+    id: "tamarind",
+    name: "Tamarind Paste",
+    category: "Spices",
+    description:
+      "Tangy paste from tamarind pods, adds sourness to stews and drinks.",
+    nutritionPer100g: {
+      calories: 239,
+      protein: 2.8,
+      carbs: 63,
+      fat: 0.6,
+      fiber: 5.1,
+    },
+    commonUses: ["Thieboudienne", "Tamarind Drink", "Sour Soups"],
+    substitutes: ["Lime Juice", "Vinegar", "Lemon Juice"],
+    origin: "East Africa",
+    season: "Year-round",
+  },
+  {
+    id: "dried-fish",
+    name: "Dried Fish",
+    category: "Proteins",
+    description: "Preserved fish that adds umami flavor to soups and stews.",
+    nutritionPer100g: {
+      calories: 375,
+      protein: 82,
+      carbs: 0,
+      fat: 3,
+      fiber: 0,
+    },
+    commonUses: ["Pepper Soup", "Egusi Soup", "Jollof Rice"],
+    substitutes: ["Smoked Fish", "Fish Stock Cubes"],
+    origin: "Coastal Africa",
+    season: "Year-round",
+  },
+  {
+    id: "shea-butter",
+    name: "Shea Butter",
+    category: "Oils",
+    description:
+      "Natural fat extracted from shea nuts, used in cooking and skincare.",
+    nutritionPer100g: {
+      calories: 884,
+      protein: 0,
+      carbs: 0,
+      fat: 100,
+      fiber: 0,
+    },
+    commonUses: ["Traditional Cooking", "Frying", "Skincare"],
+    substitutes: ["Coconut Oil", "Butter"],
+    origin: "West Africa",
+    season: "Year-round",
+  },
+  {
+    id: "cameroon-pepper",
+    name: "Cameroon Pepper",
+    category: "Spices",
+    description:
+      "Dried and ground pepper blend, essential for Central African cuisine.",
+    nutritionPer100g: {
+      calories: 318,
+      protein: 12,
+      carbs: 56,
+      fat: 17,
+      fiber: 35,
+    },
+    commonUses: ["Ndolé", "Pepper Soup", "Meat Seasoning"],
+    substitutes: ["Black Pepper + Cayenne", "White Pepper"],
+    origin: "Cameroon",
+    season: "Year-round",
+  },
+  {
+    id: "sorghum",
+    name: "Sorghum Grain",
+    category: "Grains",
+    description: "Drought-tolerant grain used for porridge, beer, and flour.",
+    nutritionPer100g: {
+      calories: 329,
+      protein: 10,
+      carbs: 72,
+      fat: 3.5,
+      fiber: 6.7,
+    },
+    commonUses: ["Sorghum Beer", "Porridge", "Gluten-free Flour"],
+    substitutes: ["Millet", "Quinoa", "Brown Rice"],
+    origin: "Northeast Africa",
+    season: "Year-round",
+  },
+  {
+    id: "hibiscus",
+    name: "Dried Hibiscus Flowers",
+    category: "Spices",
+    description:
+      "Tart flowers used to make refreshing drinks and natural food coloring.",
+    nutritionPer100g: {
+      calories: 37,
+      protein: 0.4,
+      carbs: 7.4,
+      fat: 0.6,
+      fiber: 0.3,
+    },
+    commonUses: ["Hibiscus Tea", "Zobo Drink", "Natural Coloring"],
+    substitutes: ["Cranberry Juice", "Red Food Coloring"],
+    origin: "West Africa",
+    season: "Year-round",
+  },
+  {
+    id: "african-potato",
+    name: "African Potato",
+    category: "Vegetables",
+    description: "Wild tuber used in traditional medicine and cooking.",
+    nutritionPer100g: {
+      calories: 87,
+      protein: 2,
+      carbs: 20,
+      fat: 0.1,
+      fiber: 2.2,
+    },
+    commonUses: ["Traditional Medicine", "Porridge", "Stews"],
+    substitutes: ["Sweet Potato", "Regular Potato"],
+    origin: "Southern Africa",
+    season: "Winter",
+  },
+  {
+    id: "african-spinach",
+    name: "African Spinach",
+    category: "Vegetables",
+    description:
+      "Heat-tolerant leafy green with mild flavor, rich in vitamins.",
+    nutritionPer100g: {
+      calories: 23,
+      protein: 2.9,
+      carbs: 3.6,
+      fat: 0.4,
+      fiber: 2.2,
+    },
+    commonUses: ["Spinach Stew", "Mixed Vegetables", "Soup"],
+    substitutes: ["Regular Spinach", "Swiss Chard"],
+    origin: "West Africa",
+    season: "Rainy season",
   },
 ];
 
@@ -218,8 +580,20 @@ export default function Ingredients() {
               <div
                 key={ingredient.id}
                 onClick={() => setSelectedIngredient(ingredient)}
-                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
               >
+                {ingredient.imageUrl && (
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={ingredient.imageUrl}
+                      alt={ingredient.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.src = "/ingredients/placeholder.svg";
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">
@@ -288,8 +662,20 @@ export default function Ingredients() {
       {selectedIngredient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {selectedIngredient.imageUrl && (
+              <div className="h-64 overflow-hidden rounded-t-lg">
+                <img
+                  src={selectedIngredient.imageUrl}
+                  alt={selectedIngredient.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "/ingredients/placeholder.svg";
+                  }}
+                />
+              </div>
+            )}
             <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
                     {selectedIngredient.name}
