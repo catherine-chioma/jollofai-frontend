@@ -197,7 +197,7 @@ export default function Home() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow">
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src="/recipes/picai.jpeg"
+                  src="/recipes/picai29.jpeg"
                   alt="Traditional Jollof Rice"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -227,27 +227,29 @@ export default function Home() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow">
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src="/recipes/picai10.jpeg"
-                  alt="Nigerian Egusi Soup"
+                  src="/images/nigeria akara.png"
+                  alt="Nigerian Akara"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-4 right-4">
                   <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-800">
-                    ⭐ 4.9
+                    ⭐ 4.7
                   </span>
                 </div>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Nigerian Egusi Soup
+                  Nigerian Akara
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Rich, hearty soup with ground melon seeds and leafy vegetables
+                  Traditional West African bean fritters made from ground
+                  black-eyed peas, seasoned with onions and peppers, then
+                  deep-fried to golden perfection - a beloved breakfast staple
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>🕐 1hr 20mins</span>
-                  <span>👥 6 servings</span>
-                  <span>🔥 Hard</span>
+                  <span>🕐 30 mins</span>
+                  <span>👥 4 servings</span>
+                  <span>🔥 Easy</span>
                 </div>
               </div>
             </div>
@@ -256,7 +258,7 @@ export default function Home() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden group hover:shadow-xl transition-shadow">
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src="/recipes/picai15.jpeg"
+                  src="/images/ghana kelewele.png"
                   alt="Ghanaian Kelewele"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -286,7 +288,7 @@ export default function Home() {
               <div className="relative h-64 overflow-hidden">
                 <img
                   src="/recipes/picai25.jpeg"
-                  alt="Ethiopian Injera"
+                  alt="Nigerian Plantain (Dodo)"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-4 right-4">
@@ -297,15 +299,16 @@ export default function Home() {
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Ethiopian Injera
+                  Nigerian Plantain (Dodo)
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Traditional sourdough flatbread with unique tangy flavor
+                  Sweet, caramelized fried plantain slices - Nigeria's beloved
+                  side dish
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>🕐 3 days</span>
-                  <span>👥 8 servings</span>
-                  <span>🔥 Hard</span>
+                  <span>🕐 15 mins</span>
+                  <span>👥 4 servings</span>
+                  <span>🔥 Easy</span>
                 </div>
               </div>
             </div>
@@ -315,7 +318,7 @@ export default function Home() {
               <div className="relative h-64 overflow-hidden">
                 <img
                   src="/recipes/picai30.jpeg"
-                  alt="Moroccan Tagine"
+                  alt="Preserving African Culture"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-4 right-4">
@@ -326,10 +329,11 @@ export default function Home() {
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Moroccan Chicken Tagine
+                  Preserving African Culture
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Slow-cooked chicken with aromatic spices and preserved lemons
+                  Traditional cooking methods and ancestral recipes passed down
+                  through generations
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <span>🕐 2hrs</span>
@@ -344,7 +348,7 @@ export default function Home() {
               <div className="relative h-64 overflow-hidden">
                 <img
                   src="/recipes/picai35.jpeg"
-                  alt="South African Bobotie"
+                  alt="African Natural Spices"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-4 right-4">
@@ -355,11 +359,11 @@ export default function Home() {
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  South African Bobotie
+                  African Natural Spices
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Spiced mince meat bake with egg topping and aromatic curry
-                  flavors
+                  Rich meat casserole infused with African natural spices and
+                  aromatic herbs
                 </p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <span>🕐 1hr 15mins</span>
