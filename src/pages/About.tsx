@@ -321,7 +321,7 @@ export default function About() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   General Inquiries
                 </h3>
-                <p className="text-gray-600">hello@jollofai.com</p>
+                <p className="text-gray-600">joffofai@gmail.com</p>
               </div>
               <div className="p-6 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">
