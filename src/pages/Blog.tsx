@@ -75,12 +75,12 @@ export default function Blog() {
       content:
         "Jollof rice is more than just a dish—it's a cultural phenomenon that brings families and communities together...",
       author: "Chef Amina Yusuf",
-      authorAvatar: "/avatars/chef-amina.jpg",
+      authorAvatar: "/khalid-yekini.jpg",
       category: "recipes",
       tags: ["jollof", "nigerian", "rice", "traditional"],
       publishDate: "2024-03-15",
       readTime: 8,
-      image: "/blog/jollof-guide.jpg",
+      image: "/images/nigeria ofada rice with ayamase.png",
       featured: true,
     },
     {
@@ -91,12 +91,12 @@ export default function Blog() {
       content:
         "African cuisine is renowned for its bold flavors and aromatic spices, but did you know these ingredients are also nutritional powerhouses?",
       author: "Dr. Fatima Ibrahim",
-      authorAvatar: "/avatars/dr-fatima.jpg",
+      authorAvatar: "/lucy-chioma.jpg",
       category: "nutrition",
       tags: ["health", "spices", "nutrition", "wellness"],
       publishDate: "2024-03-12",
       readTime: 6,
-      image: "/blog/african-spices.jpg",
+      image: "/images/nigeria efo riro.png",
       featured: true,
     },
     {
@@ -107,12 +107,12 @@ export default function Blog() {
       content:
         "Egusi soup tells a story that spans generations, connecting us to our ancestors and cultural heritage...",
       author: "Prof. Kwame Asante",
-      authorAvatar: "/avatars/prof-kwame.jpg",
+      authorAvatar: "/martins-babatunde.jpg",
       category: "culture",
       tags: ["egusi", "history", "culture", "west-africa"],
       publishDate: "2024-03-10",
       readTime: 10,
-      image: "/blog/egusi-history.jpg",
+      image: "/images/fufu and egusi soup.png",
       featured: false,
     },
     {
@@ -123,12 +123,12 @@ export default function Blog() {
       content:
         "Proper knife skills are the foundation of great cooking. These techniques will transform your kitchen experience...",
       author: "Chef Blessing Okoro",
-      authorAvatar: "/avatars/chef-blessing.jpg",
+      authorAvatar: "/oluchi-joy.jpg",
       category: "tips",
       tags: ["skills", "knives", "cooking", "techniques"],
       publishDate: "2024-03-08",
       readTime: 5,
-      image: "/blog/knife-skills.jpg",
+      image: "/images/nigeria suya.png",
       featured: false,
     },
     {
@@ -139,12 +139,12 @@ export default function Blog() {
       content:
         "Living away from home doesn't mean compromising on authentic flavors. Here's your guide to finding quality African ingredients worldwide...",
       author: "Sarah Adebayo",
-      authorAvatar: "/avatars/sarah-adebayo.jpg",
+      authorAvatar: "/jiddah-abidemi.jpg",
       category: "ingredients",
       tags: ["shopping", "ingredients", "global", "authentic"],
       publishDate: "2024-03-05",
       readTime: 7,
-      image: "/blog/ingredient-sourcing.jpg",
+      image: "/images/ghana kelewele.png",
       featured: false,
     },
     {
@@ -155,12 +155,12 @@ export default function Blog() {
       content:
         "In our fast-paced world, maintaining connections to our culinary traditions can be challenging but deeply rewarding...",
       author: "Mama Chioma",
-      authorAvatar: "/avatars/mama-chioma.jpg",
+      authorAvatar: "/khalid-yekini.jpg",
       category: "lifestyle",
       tags: ["modern", "traditional", "balance", "lifestyle"],
       publishDate: "2024-03-02",
       readTime: 6,
-      image: "/blog/modern-traditional.jpg",
+      image: "/images/bitterleaf soup.png",
       featured: false,
     },
   ];
@@ -213,7 +213,7 @@ export default function Blog() {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder-blog.jpg";
+                      target.src = "/rice-image.jpg";
                     }}
                   />
                   <div className="absolute top-4 left-4">
@@ -243,7 +243,7 @@ export default function Blog() {
                         className="w-8 h-8 rounded-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder-avatar.jpg";
+                          target.src = "/khalid-yekini.jpg";
                         }}
                       />
                       <div>
@@ -395,7 +395,7 @@ export default function Blog() {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder-blog.jpg";
+                          target.src = "/rice-image.jpg";
                         }}
                       />
                     </div>
@@ -441,7 +441,7 @@ export default function Blog() {
                             className="w-8 h-8 rounded-full"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder-avatar.jpg";
+                              target.src = "/khalid-yekini.jpg";
                             }}
                           />
                           <div>
