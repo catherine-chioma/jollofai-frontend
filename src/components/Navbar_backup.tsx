@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "./Button";
@@ -32,22 +32,22 @@ export default function Navbar() {
     <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-100">
       <div className="container mx-auto max-w-7xl px-6">
         <div className="flex items-center justify-between h-16">
+          {/* Logo Section */}
           <div className="flex items-center">
             <Link
               to="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity duration-200"
             >
-              <img
-                src="/logo.png"
-                alt="JollofAI Logo"
-                className="w-10 h-10 object-contain"
-              />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🍲</span>
+              </div>
               <span className="text-xl font-bold text-orange-600">
                 JollofAI
               </span>
             </Link>
           </div>
 
+          {/* Center Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
@@ -64,9 +64,11 @@ export default function Navbar() {
             ))}
           </nav>
 
+          {/* Right Section */}
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                {/* Dashboard Link */}
                 <Link
                   to="/dashboard"
                   className={`hidden md:flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
@@ -78,6 +80,7 @@ export default function Navbar() {
                   📊 Dashboard
                 </Link>
 
+                {/* User Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -163,6 +166,7 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="lg:hidden p-2 rounded-md hover:bg-gray-50 transition-colors"
@@ -186,6 +190,7 @@ export default function Navbar() {
           </button>
         </div>
 
+        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="lg:hidden border-t border-gray-100">
             <nav className="px-4 py-4 space-y-2">
@@ -204,6 +209,7 @@ export default function Navbar() {
                 </Link>
               ))}
 
+              {/* Mobile Auth */}
               <div className="pt-4 border-t border-gray-100 mt-4">
                 {user ? (
                   <>
