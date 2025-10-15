@@ -8,25 +8,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-50/80 via-white to-primary/5 overflow-hidden min-h-screen flex items-center">
+      <section className="relative bg-gradient-to-br from-gray-50/80 via-white to-primary/5 overflow-hidden pt-8 pb-16 flex items-center">
         {/* Simplified Background Elements */}
         <div className="absolute inset-0">
           <div className="absolute top-20 right-20 w-96 h-96 bg-primary/4 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="relative container mx-auto max-w-6xl px-6 py-16 lg:py-24">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="relative container mx-auto max-w-6xl px-6 py-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
-            <div className="space-y-10">
-              {/* Logo */}
-              <div>
-                <img
-                  src="/logo.png"
-                  alt="JollofAI Logo"
-                  className="h-12 md:h-16 w-auto"
-                />
-              </div>
-
+            <div className="space-y-8">
               {/* Clean Badge */}
               <div className="inline-block">
                 <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-full">
@@ -35,7 +26,7 @@ export default function Home() {
               </div>
 
               {/* Simplified Main Heading */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
                   Authentic African recipes
                   <span className="block text-primary mt-2">
@@ -45,7 +36,7 @@ export default function Home() {
               </div>
 
               {/* Clean Description */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-xl">
                   Transform your ingredients into delicious African meals with
                   our intelligent recipe generator. Discover traditional flavors
@@ -73,7 +64,7 @@ export default function Home() {
               </div>
 
               {/* Simplified Trust Indicators */}
-              <div className="pt-8 border-t border-gray-200">
+              <div className="pt-6 border-t border-gray-200">
                 <div className="grid grid-cols-3 gap-6 text-center">
                   <div>
                     <div className="text-2xl font-bold text-primary">
@@ -102,7 +93,7 @@ export default function Home() {
             {/* Right Content - Clean Hero Image */}
             <div className="relative w-full flex justify-center">
               {/* Clean Image Container */}
-              <div className="relative w-full max-w-lg">
+              <div className="relative w-full max-w-2xl">
                 {/* Simple Background Card */}
                 <div className="absolute inset-0 bg-white rounded-2xl shadow-lg transform rotate-1"></div>
 
@@ -113,7 +104,7 @@ export default function Home() {
                     <img
                       src={heroImage}
                       alt="JollofAI - Traditional African cuisine made simple"
-                      className="w-full h-auto object-contain rounded-xl"
+                      className="w-full h-64 md:h-80 object-cover rounded-xl"
                     />
                   </div>
                 </div>
