@@ -17,6 +17,9 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import AIChatPage from "./pages/AIChatPage";
+import Community from "./pages/Community";
+import Blog from "./pages/Blog";
+import APIDocumentation from "./pages/APIDocumentation";
 
 export default function App() {
   return (
@@ -34,6 +37,12 @@ export default function App() {
                 <Route path="/marketplace" element={<VendorMarketplace />} />
                 <Route path="/ingredients" element={<Ingredients />} />
                 <Route path="/ai-chat" element={<AIChatPage />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route
+                  path="/api-documentation"
+                  element={<APIDocumentation />}
+                />
                 <Route path="/about" element={<About />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
