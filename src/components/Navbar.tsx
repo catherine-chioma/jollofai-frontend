@@ -16,7 +16,6 @@ export default function Navbar() {
     { to: "/recipe-discovery", label: "Discover" },
     { to: "/ingredients", label: "Ingredients" },
     { to: "/ai-chat", label: "AI Chat" },
-    { to: "/community", label: "Community" },
     { to: "/about", label: "About Us" },
   ];
 
