@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Button from "../components/Button";
 import heroImage from "../images/image.png";
 
@@ -46,21 +46,23 @@ export default function Home() {
 
               {/* Clean Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={() => navigate("/recipe-generator")}
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  Get Started Free
-                </Button>
-                <Button
-                  onClick={() => navigate("/signin")}
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg font-medium border-2 border-gray-300 hover:border-primary hover:text-primary rounded-xl transition-all duration-200"
-                >
-                  Sign In
-                </Button>
+                <Link to="/recipe-generator">
+                  <Button
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+                  >
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link to="/signin">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="px-8 py-4 text-lg font-medium border-2 border-gray-300 hover:border-primary hover:text-primary rounded-xl transition-all duration-200 w-full sm:w-auto"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
               </div>
 
               {/* Simplified Trust Indicators */}
@@ -389,14 +391,15 @@ export default function Home() {
             Join thousands of home cooks who are discovering new flavors with
             JollofAI
           </p>
-          <Button
-            onClick={() => navigate("/recipe-generator")}
-            variant="secondary"
-            size="lg"
-            className="bg-white text-primary hover:bg-gray-100"
-          >
-            Get Started Free
-          </Button>
+          <Link to="/recipe-generator">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="bg-white text-primary hover:bg-gray-100"
+            >
+              Get Started Free
+            </Button>
+          </Link>
         </div>
       </section>
     </div>
