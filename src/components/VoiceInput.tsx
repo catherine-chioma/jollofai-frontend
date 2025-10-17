@@ -71,7 +71,28 @@ export default function VoiceInput({
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
+    console.log("VoiceInput: Checking browser support...", {
+      SpeechRecognition: !!SpeechRecognition,
+      userAgent: navigator.userAgent,
+      isSecure:
+        window.location.protocol === "https:" ||
+        window.location.hostname === "localhost",
+      mediaDevices: !!navigator.mediaDevices,
+    });
+
     if (SpeechRecognition) {
+      // Test microphone access
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then(() => {
+            console.log("VoiceInput: Microphone access granted");
+          })
+          .catch((err) => {
+            console.error("VoiceInput: Microphone access denied:", err);
+            showToast("Microphone access required for voice input", "warning");
+          });
+      }
       setIsSupported(true);
       recognitionRef.current = new SpeechRecognition();
 
@@ -179,7 +200,15 @@ export default function VoiceInput({
   }, [onTranscript, onListeningChange, transcript, showToast]);
 
   const startListening = () => {
+    console.log("VoiceInput: Attempting to start listening...", {
+      isSupported,
+      hasRecognition: !!recognitionRef.current,
+      protocol: window.location.protocol,
+      hostname: window.location.hostname,
+    });
+
     if (!isSupported || !recognitionRef.current) {
+      console.error("VoiceInput: Not supported or no recognition instance");
       showToast("Speech recognition not supported", "error");
       return;
     }
@@ -189,6 +218,7 @@ export default function VoiceInput({
       setInterimTranscript("");
       setError(null);
 
+      console.log("VoiceInput: Starting speech recognition...");
       recognitionRef.current.start();
 
       // Set automatic stop timeout
