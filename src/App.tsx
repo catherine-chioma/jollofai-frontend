@@ -30,6 +30,7 @@ import ShoppingList from "./pages/ShoppingList";
 import MealPlanning from "./pages/MealPlanning";
 import NutritionDashboard from "./pages/NutritionDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import CreateRecipe from "./pages/CreateRecipe";
 // Privacy page inlined below
 import Terms from "./pages/Terms";
 
@@ -56,6 +57,14 @@ export default function App() {
                   <Route path="/recipe/:id" element={<RecipeDetail />} />
                   <Route path="/marketplace" element={<VendorMarketplace />} />
                   <Route path="/ingredients" element={<Ingredients />} />
+                  <Route
+                    path="/create-recipe"
+                    element={
+                      <ProtectedRoute>
+                        <CreateRecipe />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/ai-chat" element={<AIChatPage />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/blog" element={<Blog />} />

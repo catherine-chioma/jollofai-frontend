@@ -14,6 +14,7 @@ export default function Navbar() {
     { to: "/", label: "Home" },
     { to: "/recipe-generator", label: "Recipes" },
     { to: "/recipe-discovery", label: "Discover" },
+    { to: "/create-recipe", label: "Create Recipe" },
     { to: "/ingredients", label: "Ingredients" },
     { to: "/pantry", label: "Pantry" },
     { to: "/meal-planning", label: "Meal Plans" },
