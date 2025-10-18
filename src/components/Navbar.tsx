@@ -15,16 +15,26 @@ export default function Navbar() {
     { to: "/recipe-generator", label: "Recipes" },
     { to: "/recipe-discovery", label: "Discover" },
     { to: "/ingredients", label: "Ingredients" },
+    { to: "/pantry", label: "Pantry" },
+    { to: "/meal-planning", label: "Meal Plans" },
+    { to: "/nutrition", label: "Nutrition" },
     { to: "/ai-chat", label: "AI Chat" },
     { to: "/about", label: "About Us" },
   ];
 
   const isActiveLink = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
-    logout();
-    setIsUserMenuOpen(false);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsUserMenuOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Force local logout even if API fails
+      setIsUserMenuOpen(false);
+      navigate("/");
+    }
   };
 
   return (
@@ -127,6 +137,22 @@ export default function Navbar() {
                       >
                         👤 Profile Settings
                       </Link>
+                      <Link
+                        to="/shopping-list"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        🛒 Shopping List
+                      </Link>
+                      {user?.role === "admin" && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors font-medium"
+                        >
+                          ⚙️ Admin Dashboard
+                        </Link>
+                      )}
                       <div className="border-t border-gray-100 mt-1">
                         <button
                           onClick={handleLogout}
@@ -237,6 +263,15 @@ export default function Navbar() {
                     >
                       Profile Settings
                     </Link>
+                    {user?.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         handleLogout();

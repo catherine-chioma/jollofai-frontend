@@ -183,11 +183,11 @@ export default function Footer() {
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li className="text-gray-300">joffofai@gmail.com</li>
-              <li className="text-gray-300">+1 (555) 123-4567</li>
+              <li className="text-gray-300">+234 (703) 974-5689</li>
               <li className="text-gray-300">
                 Lagos, Nigeria
                 <br />
-                San Francisco, CA
+                WEST AFRICA
               </li>
             </ul>
           </div>
