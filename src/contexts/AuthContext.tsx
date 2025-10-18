@@ -5,12 +5,16 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import axios from "../config/api";
+import axios, { API_ENDPOINTS } from "../config/api";
 
 interface User {
   id: string;
   fullName: string;
   email: string;
+  role?: "user" | "admin" | "moderator";
+  firstName?: string;
+  lastName?: string;
+  profilePicture?: string;
 }
 
 interface AuthResponse {
@@ -27,7 +31,7 @@ interface AuthContextType {
     email: string,
     password: string
   ) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -140,11 +144,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("jollofai_user");
-    localStorage.removeItem("jollofai_token");
+  const logout = async () => {
+    try {
+      // Call the logout API endpoint if user is logged in
+      if (token) {
+        await axios.post(API_ENDPOINTS.AUTH.LOGOUT);
+      }
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+      // Continue with local logout even if API call fails
+    } finally {
+      // Always clear local storage and state
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("jollofai_user");
+      localStorage.removeItem("jollofai_token");
+    }
   };
 
   const value = {
