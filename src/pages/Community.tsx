@@ -1,17 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { useToast } from "../components/Toast";
+import axios, { API_ENDPOINTS } from "../config/api";
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   content: string;
-  author: string;
+  author: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
   category: string;
-  replies: number;
   likes: number;
-  timestamp: string;
+  likedBy?: string[];
+  comments?: Comment[];
+  createdAt: string;
+  updatedAt: string;
   tags: string[];
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  author: {
+    id: string;
+    fullName: string;
+  };
+  createdAt: string;
 }
 
 interface Category {
@@ -24,8 +43,12 @@ interface Category {
 
 export default function Community() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showNewPost, setShowNewPost] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newPost, setNewPost] = useState({
     title: "",
     content: "",
@@ -38,108 +61,142 @@ export default function Community() {
       id: "general",
       name: "General Discussion",
       description: "General cooking topics",
-      postCount: 124,
+      postCount: 0,
       color: "bg-blue-100 text-blue-800",
     },
     {
       id: "recipes",
       name: "Recipe Sharing",
       description: "Share your favorite recipes",
-      postCount: 89,
+      postCount: 0,
       color: "bg-green-100 text-green-800",
+    },
+    {
+      id: "ingredients",
+      name: "Ingredients & Sourcing",
+      description: "Finding the best ingredients",
+      postCount: 0,
+      color: "bg-purple-100 text-purple-800",
+    },
+    {
+      id: "cultural",
+      name: "Cultural Exchange",
+      description: "Traditional cooking methods",
+      postCount: 0,
+      color: "bg-red-100 text-red-800",
     },
     {
       id: "tips",
       name: "Cooking Tips",
-      description: "Tips and techniques",
-      postCount: 67,
-      color: "bg-purple-100 text-purple-800",
-    },
-    {
-      id: "ingredients",
-      name: "Ingredients",
-      description: "Ingredient discussions",
-      postCount: 45,
-      color: "bg-orange-100 text-orange-800",
-    },
-    {
-      id: "cultural",
-      name: "Cultural Dishes",
-      description: "Traditional African cuisine",
-      postCount: 78,
-      color: "bg-red-100 text-red-800",
-    },
-    {
-      id: "help",
-      name: "Help & Support",
-      description: "Get help with cooking",
-      postCount: 34,
+      description: "Helpful cooking advice",
+      postCount: 0,
       color: "bg-yellow-100 text-yellow-800",
     },
   ];
 
-  const posts: Post[] = [
-    {
-      id: 1,
-      title: "Perfect Jollof Rice: What's your secret ingredient?",
-      content:
-        "I've been trying to perfect my jollof rice recipe. What's that one secret ingredient that makes all the difference?",
-      author: "ChefAisha",
-      category: "recipes",
-      replies: 23,
-      likes: 45,
-      timestamp: "2 hours ago",
-      tags: ["jollof", "rice", "nigerian"],
-    },
-    {
-      id: 2,
-      title: "Best places to buy authentic African spices?",
-      content:
-        "Looking for reliable sources for authentic African spices. Any recommendations for online stores or local markets?",
-      author: "SpiceLover123",
-      category: "ingredients",
-      replies: 18,
-      likes: 32,
-      timestamp: "4 hours ago",
-      tags: ["spices", "shopping", "authentic"],
-    },
-    {
-      id: 3,
-      title: "Egusi soup: Palm oil vs vegetable oil debate",
-      content:
-        "What are your thoughts on using palm oil vs vegetable oil in egusi soup? Does it really make a difference in taste?",
-      author: "NigerianFoodie",
-      category: "cultural",
-      replies: 31,
-      likes: 67,
-      timestamp: "6 hours ago",
-      tags: ["egusi", "palm-oil", "traditional"],
-    },
-    {
-      id: 4,
-      title: "Meal prep ideas for busy weekdays",
-      content:
-        "I'm looking for African meal prep ideas that can last throughout the week. What are your go-to recipes?",
-      author: "BusyMom2Kids",
-      category: "tips",
-      replies: 15,
-      likes: 28,
-      timestamp: "8 hours ago",
-      tags: ["meal-prep", "busy", "weekday"],
-    },
-  ];
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(API_ENDPOINTS.COMMUNITY.POSTS);
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      showToast("Failed to load community posts", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredPosts =
     selectedCategory === "all"
       ? posts
       : posts.filter((post) => post.category === selectedCategory);
 
-  const handleSubmitPost = (e: React.FormEvent) => {
+  const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would submit to an API
-    console.log("New post:", newPost);
-    setShowNewPost(false);
-    setNewPost({ title: "", content: "", category: "general", tags: "" });
+    if (!user) {
+      showToast("You must be logged in to create a post", "error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const postData = {
+        title: newPost.title,
+        content: newPost.content,
+        category: newPost.category,
+        tags: newPost.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag),
+      };
+
+      const response = await axios.post(
+        API_ENDPOINTS.COMMUNITY.CREATE_POST,
+        postData
+      );
+      setPosts([response.data, ...posts]);
+      setShowNewPost(false);
+      setNewPost({ title: "", content: "", category: "general", tags: "" });
+      showToast("Post created successfully!", "success");
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      showToast(
+        error.response?.data?.message || "Failed to create post",
+        "error"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    if (!user) {
+      showToast("You must be logged in to like posts", "error");
+      return;
+    }
+
+    try {
+      await axios.post(API_ENDPOINTS.COMMUNITY.LIKE_POST(postId));
+
+      // Update the post in the local state
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            const isLiked = post.likedBy?.includes(user.id);
+            return {
+              ...post,
+              likes: isLiked ? post.likes - 1 : post.likes + 1,
+              likedBy: isLiked
+                ? (post.likedBy || []).filter((id) => id !== user.id)
+                : [...(post.likedBy || []), user.id],
+            };
+          }
+          return post;
+        })
+      );
+    } catch (error: any) {
+      console.error("Error liking post:", error);
+      showToast("Failed to like post", "error");
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
+    if (diffInHours < 1) return "Less than an hour ago";
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -328,14 +385,17 @@ export default function Community() {
                   <div className="flex gap-3">
                     <Button
                       type="submit"
+                      loading={isSubmitting}
+                      disabled={isSubmitting}
                       className="bg-primary hover:bg-primary/90 text-white"
                     >
-                      Post
+                      {isSubmitting ? "Posting..." : "Post"}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setShowNewPost(false)}
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </Button>
@@ -345,82 +405,135 @@ export default function Community() {
             )}
 
             {/* Posts List */}
-            <div className="space-y-4">
-              {filteredPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary cursor-pointer">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-600 mb-3">{post.content}</p>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner
+                  size="lg"
+                  message="Loading community posts..."
+                />
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                <div className="text-6xl mb-4">💬</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No Posts Yet
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Be the first to start a conversation in this category!
+                </p>
+                {user && (
+                  <Button
+                    onClick={() => setShowNewPost(true)}
+                    className="bg-primary hover:bg-primary/90 text-white"
+                  >
+                    Create First Post
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredPosts.map((post) => {
+                  const isLiked = user && post.likedBy?.includes(user.id);
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {post.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                          >
-                            #{tag}
+                  return (
+                    <div
+                      key={post.id}
+                      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary cursor-pointer">
+                            {post.title}
+                          </h3>
+                          <p className="text-gray-600 mb-3">{post.content}</p>
+
+                          {/* Tags */}
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {post.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Post Meta */}
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <div className="flex items-center gap-4">
+                          <span className="font-medium text-primary">
+                            {post.author.fullName}
                           </span>
-                        ))}
+                          <span>{formatTimeAgo(post.createdAt)}</span>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              categories.find((c) => c.id === post.category)
+                                ?.color
+                            }`}
+                          >
+                            {
+                              categories.find((c) => c.id === post.category)
+                                ?.name
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={() => handleLikePost(post.id)}
+                            className={`flex items-center gap-1 hover:text-red-600 transition-colors ${
+                              isLiked ? "text-red-600" : "text-gray-500"
+                            }`}
+                            disabled={!user}
+                            title={
+                              !user
+                                ? "Login to like posts"
+                                : isLiked
+                                ? "Unlike"
+                                : "Like"
+                            }
+                          >
+                            <svg
+                              className={`w-4 h-4 ${
+                                isLiked
+                                  ? "fill-current"
+                                  : "fill-none stroke-current"
+                              }`}
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {post.likes}
+                          </button>
+                          <span className="flex items-center gap-1">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {post.comments?.length || 0}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Post Meta */}
-                  <div className="flex justify-between items-center text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium text-primary">
-                        {post.author}
-                      </span>
-                      <span>{post.timestamp}</span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          categories.find((c) => c.id === post.category)?.color
-                        }`}
-                      >
-                        {categories.find((c) => c.id === post.category)?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        {post.likes}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        {post.replies}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

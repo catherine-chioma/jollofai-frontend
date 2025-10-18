@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import CookingProgress from "../components/CookingProgress";
 import AIChat from "../components/AIChat";
+import RatingComponent from "../components/RatingComponent";
 import { useToast } from "../components/Toast";
 
 interface Recipe {
@@ -844,6 +845,11 @@ export default function RecipeDetail() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Ratings and Reviews */}
+        <div className="container mx-auto max-w-4xl px-6 py-8">
+          <RatingComponent recipeId={recipe.id} />
         </div>
       </div>
 

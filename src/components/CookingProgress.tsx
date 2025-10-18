@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Button from "./Button";
 import { useToast } from "./Toast";
+import VoiceInput from "./VoiceInput";
 
 interface CookingStep {
   id: string;
@@ -40,6 +41,19 @@ export default function CookingProgress({
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
   const [isPaused, setIsPaused] = useState(false);
   const [showFullInstructions, setShowFullInstructions] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showVoiceCommands, setShowVoiceCommands] = useState(false);
+  const [lastVoiceCommand, setLastVoiceCommand] = useState("");
+  const [cookingNotes, setCookingNotes] = useState<Record<string, string>>({});
+  const [showNotes, setShowNotes] = useState(false);
+  const [currentNote, setCurrentNote] = useState("");
+  const [showSubstitutions, setShowSubstitutions] = useState(false);
+  const [difficultyLevel, setDifficultyLevel] = useState<
+    "easy" | "medium" | "hard"
+  >("medium");
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+  const [showSmartTips, setShowSmartTips] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -227,6 +241,196 @@ export default function CookingProgress({
     }
   };
 
+  const processVoiceCommand = (transcript: string) => {
+    const command = transcript.toLowerCase().trim();
+    setLastVoiceCommand(command);
+
+    // Voice command patterns
+    const commands = [
+      {
+        patterns: ["next", "next step", "continue", "move on", "go to next"],
+        action: () => {
+          nextStep();
+          showToast("Moving to next step via voice command", "success");
+        },
+      },
+      {
+        patterns: ["previous", "back", "go back", "last step", "previous step"],
+        action: () => {
+          previousStep();
+          showToast("Going back to previous step via voice command", "success");
+        },
+      },
+      {
+        patterns: ["start timer", "timer", "set timer", "begin timer"],
+        action: () => {
+          if (currentStep.duration && !isTimerActive) {
+            startTimer(currentStep.duration);
+            showToast(
+              `Started ${currentStep.duration}-minute timer via voice`,
+              "success"
+            );
+          } else if (isTimerActive) {
+            showToast("Timer is already running", "info");
+          } else {
+            showToast("No timer available for this step", "info");
+          }
+        },
+      },
+      {
+        patterns: ["pause", "pause timer", "stop timer", "hold"],
+        action: () => {
+          if (isTimerActive && !isPaused) {
+            pauseTimer();
+            showToast("Timer paused via voice command", "success");
+          } else if (isPaused) {
+            resumeTimer();
+            showToast("Timer resumed via voice command", "success");
+          } else {
+            showToast("No active timer to pause", "info");
+          }
+        },
+      },
+      {
+        patterns: ["resume", "resume timer", "continue timer", "unpause"],
+        action: () => {
+          if (isPaused) {
+            resumeTimer();
+            showToast("Timer resumed via voice command", "success");
+          } else {
+            showToast("Timer is not paused", "info");
+          }
+        },
+      },
+      {
+        patterns: ["repeat", "repeat step", "read again", "what was that"],
+        action: () => {
+          // Use speech synthesis to read the current step
+          if ("speechSynthesis" in window) {
+            const utterance = new SpeechSynthesisUtterance(
+              `Step ${currentStepIndex + 1}: ${currentStep.instruction}`
+            );
+            utterance.rate = 0.8;
+            utterance.pitch = 1;
+            utterance.volume = 0.8;
+            speechSynthesis.speak(utterance);
+            showToast("Reading current step aloud", "info");
+          }
+        },
+      },
+      {
+        patterns: ["help", "commands", "what can i say", "voice commands"],
+        action: () => {
+          setShowVoiceCommands(true);
+          showToast("Showing available voice commands", "info");
+        },
+      },
+      {
+        patterns: ["done", "complete", "finished", "finish step"],
+        action: () => {
+          nextStep();
+          showToast("Marked step as complete via voice", "success");
+        },
+      },
+    ];
+
+    // Find matching command
+    const matchedCommand = commands.find((cmd) =>
+      cmd.patterns.some(
+        (pattern) =>
+          command.includes(pattern) ||
+          pattern.split(" ").every((word) => command.includes(word))
+      )
+    );
+
+    if (matchedCommand) {
+      matchedCommand.action();
+    } else {
+      showToast(
+        `Voice command "${command}" not recognized. Say "help" for available commands.`,
+        "warning"
+      );
+    }
+  };
+
+  const readCurrentStep = () => {
+    if ("speechSynthesis" in window) {
+      let text = `Step ${currentStepIndex + 1}: ${currentStep.instruction}`;
+      if (currentStep.duration) {
+        text += ` This step takes ${currentStep.duration} minutes.`;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const saveCookingNote = (stepId: string, note: string) => {
+    setCookingNotes((prev) => ({ ...prev, [stepId]: note }));
+    showToast("Note saved for this step", "success");
+  };
+
+  const generateSmartSuggestions = (step: CookingStep) => {
+    const suggestions: string[] = [];
+
+    // Generate suggestions based on step type and content
+    if (step.type === "cook" && step.instruction.includes("oil")) {
+      suggestions.push("💡 Heat oil until it shimmers but doesn't smoke");
+      suggestions.push("🔥 Medium-high heat works best for most oils");
+    }
+
+    if (step.instruction.includes("onion")) {
+      suggestions.push("🧅 Cook onions until translucent for best flavor");
+      suggestions.push("⏰ This usually takes 3-5 minutes");
+    }
+
+    if (step.type === "prep" && step.instruction.includes("cut")) {
+      suggestions.push("🔪 Keep fingers curled and knife sharp for safety");
+      suggestions.push("📏 Uniform cuts cook more evenly");
+    }
+
+    if (step.temperature) {
+      suggestions.push(`🌡️ Use a thermometer to check ${step.temperature}`);
+    }
+
+    setSmartSuggestions(suggestions);
+  };
+
+  const getIngredientSubstitutions = (ingredient: string) => {
+    const substitutions: Record<string, string[]> = {
+      butter: ["coconut oil", "olive oil", "vegetable oil"],
+      milk: ["almond milk", "coconut milk", "oat milk"],
+      eggs: ["flax eggs", "applesauce", "banana"],
+      flour: ["almond flour", "coconut flour", "rice flour"],
+      sugar: ["honey", "maple syrup", "stevia"],
+    };
+
+    return substitutions[ingredient.toLowerCase()] || [];
+  };
+
+  const getDifficultyColor = (level: string) => {
+    switch (level) {
+      case "easy":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "hard":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Generate smart suggestions when step changes
+  useEffect(() => {
+    if (currentStep) {
+      generateSmartSuggestions(currentStep);
+    }
+  }, [currentStepIndex, currentStep]);
+
   return (
     <div
       className={`h-full flex flex-col bg-gradient-to-br from-gray-50 to-white ${className}`}
@@ -236,9 +440,38 @@ export default function CookingProgress({
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">{recipe.title}</h2>
-            <Button variant="outline" onClick={onExit} className="text-sm">
-              Exit Cooking Mode
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Voice Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={isVoiceEnabled ? "secondary" : "outline"}
+                  onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                  size="sm"
+                  title="Toggle voice commands"
+                >
+                  🎤 Voice
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={readCurrentStep}
+                  size="sm"
+                  title="Read current step aloud"
+                >
+                  🔊
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowVoiceCommands(true)}
+                  size="sm"
+                  title="Show voice commands help"
+                >
+                  ❓
+                </Button>
+              </div>
+              <Button variant="outline" onClick={onExit} className="text-sm">
+                Exit Cooking Mode
+              </Button>
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -392,6 +625,33 @@ export default function CookingProgress({
                 </div>
               )}
 
+              {/* Voice Control Section */}
+              {isVoiceEnabled && (
+                <div className="mb-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <h4 className="font-medium text-purple-900 mb-3 flex items-center">
+                    🎤 Voice Commands
+                    {lastVoiceCommand && (
+                      <span className="ml-2 text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                        Last: "{lastVoiceCommand}"
+                      </span>
+                    )}
+                  </h4>
+                  <VoiceInput
+                    onTranscript={processVoiceCommand}
+                    placeholder="Say a command like 'next step', 'start timer', or 'repeat'..."
+                    isListening={isListening}
+                    onListeningChange={setIsListening}
+                    className="mb-2"
+                  />
+                  <div className="text-xs text-purple-600 space-y-1">
+                    <div>• "Next step" - Move to next step</div>
+                    <div>• "Start timer" - Begin step timer</div>
+                    <div>• "Pause" - Pause/resume timer</div>
+                    <div>• "Repeat" - Read step aloud</div>
+                  </div>
+                </div>
+              )}
+
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <Button
@@ -507,6 +767,133 @@ export default function CookingProgress({
           </div>
         </div>
       </div>
+
+      {/* Voice Commands Help Modal */}
+      {showVoiceCommands && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  🎤 Voice Commands Help
+                </h3>
+                <button
+                  onClick={() => setShowVoiceCommands(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Navigation Commands
+                  </h4>
+                  <div className="space-y-1 text-sm text-blue-800">
+                    <div>
+                      • <strong>"Next step"</strong> or{" "}
+                      <strong>"Continue"</strong> - Move to next step
+                    </div>
+                    <div>
+                      • <strong>"Previous"</strong> or{" "}
+                      <strong>"Go back"</strong> - Return to previous step
+                    </div>
+                    <div>
+                      • <strong>"Done"</strong> or <strong>"Finished"</strong> -
+                      Mark current step complete
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-2">
+                    Timer Commands
+                  </h4>
+                  <div className="space-y-1 text-sm text-green-800">
+                    <div>
+                      • <strong>"Start timer"</strong> - Begin the step timer
+                    </div>
+                    <div>
+                      • <strong>"Pause"</strong> - Pause/resume the timer
+                    </div>
+                    <div>
+                      • <strong>"Resume timer"</strong> - Resume paused timer
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-medium text-purple-900 mb-2">
+                    Audio Commands
+                  </h4>
+                  <div className="space-y-1 text-sm text-purple-800">
+                    <div>
+                      • <strong>"Repeat"</strong> or{" "}
+                      <strong>"Read again"</strong> - Read current step aloud
+                    </div>
+                    <div>
+                      • <strong>"What was that"</strong> - Repeat last
+                      instruction
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <h4 className="font-medium text-yellow-900 mb-2">
+                    Help Commands
+                  </h4>
+                  <div className="space-y-1 text-sm text-yellow-800">
+                    <div>
+                      • <strong>"Help"</strong> or <strong>"Commands"</strong> -
+                      Show this help
+                    </div>
+                    <div>
+                      • <strong>"What can I say"</strong> - List available
+                      commands
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    💡 Tips for Best Results
+                  </h4>
+                  <div className="space-y-1 text-sm text-gray-700">
+                    <div>• Speak clearly and at normal volume</div>
+                    <div>
+                      • Wait for the listening indicator before speaking
+                    </div>
+                    <div>• Use simple, direct commands</div>
+                    <div>• Commands work best in quiet environments</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 mt-6 border-t">
+                <Button
+                  onClick={() => setShowVoiceCommands(false)}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                >
+                  Got it!
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
