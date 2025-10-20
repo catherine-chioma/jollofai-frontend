@@ -14,6 +14,7 @@ interface PantryItem {
   expiryDate?: string;
   addedDate: string;
   lowStockThreshold?: number;
+  imageUrl?: string;
 }
 
 interface PantryCategory {
@@ -41,6 +42,7 @@ export default function Pantry() {
     category: "vegetables",
     expiryDate: "",
     lowStockThreshold: 5,
+    image: null as File | null,
   });
 
   const categories: PantryCategory[] = [
@@ -92,6 +94,26 @@ export default function Pantry() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("Image file size should be less than 5MB", "error");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        showToast("Please select a valid image file", "error");
+        return;
+      }
+
+      setNewItem({ ...newItem, image: file });
+      showToast("Image selected successfully!", "success");
+    }
+  };
+
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,18 +124,33 @@ export default function Pantry() {
 
     setIsSubmitting(true);
     try {
-      const itemData = {
-        name: newItem.name.trim(),
-        quantity: newItem.quantity,
-        unit: newItem.unit,
-        category: newItem.category,
-        expiryDate: newItem.expiryDate || undefined,
-        lowStockThreshold: newItem.lowStockThreshold,
-      };
+      // Use FormData to handle both text data and file upload
+      const formData = new FormData();
+      formData.append("name", newItem.name.trim());
+      formData.append("quantity", newItem.quantity.toString());
+      formData.append("unit", newItem.unit);
+      formData.append("category", newItem.category);
+      formData.append(
+        "lowStockThreshold",
+        newItem.lowStockThreshold.toString()
+      );
+
+      if (newItem.expiryDate) {
+        formData.append("expiryDate", newItem.expiryDate);
+      }
+
+      if (newItem.image) {
+        formData.append("image", newItem.image);
+      }
 
       const response = await axios.post(
         API_ENDPOINTS.PANTRY.ADD_ITEM,
-        itemData
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       setPantryItems([...pantryItems, response.data]);
 
@@ -125,6 +162,7 @@ export default function Pantry() {
         category: "vegetables",
         expiryDate: "",
         lowStockThreshold: 5,
+        image: null,
       });
 
       showToast("Item added to pantry!", "success");
@@ -409,6 +447,20 @@ export default function Pantry() {
                           : "border-green-500"
                       }`}
                     >
+                      {/* Item Image (if available) */}
+                      {item.imageUrl && (
+                        <div className="mb-4">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-32 object-cover rounded-lg"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">
@@ -645,6 +697,48 @@ export default function Pantry() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   />
+                </div>
+
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Item Image (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  />
+                  {newItem.image && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <img
+                        src={URL.createObjectURL(newItem.image)}
+                        alt="Preview"
+                        className="w-16 h-16 object-cover rounded-md border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-green-600 font-medium">
+                          Image selected
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {newItem.image.name}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNewItem({ ...newItem, image: null })
+                          }
+                          className="text-xs text-red-500 hover:text-red-700 mt-1"
+                        >
+                          Remove image
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload a photo of your ingredient (max 5MB, JPG/PNG/WebP)
+                  </p>
                 </div>
 
                 <div>
