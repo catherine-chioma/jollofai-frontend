@@ -39,11 +39,30 @@ export class ApiService {
       }
       if (params.search) {
         const searchTerm = params.search.toLowerCase();
+        
+        // Log the search method for backend processing
+        if (params.searchMethod) {
+          console.log(`Recipe search via ${params.searchMethod}: "${searchTerm}"`);
+        }
+        
         recipes = recipes.filter(r => 
           r.title.toLowerCase().includes(searchTerm) ||
           r.description.toLowerCase().includes(searchTerm) ||
           r.tags.some(tag => tag.toLowerCase().includes(searchTerm))
         );
+        
+        // Apply different filtering logic based on search method
+        if (params.searchMethod === 'voice') {
+          // For voice search, we might want to be more lenient with matching
+          // and consider phonetic similarities or common voice-to-text errors
+          recipes = recipes.filter(r => {
+            const ingredients = r.ingredients?.join(' ').toLowerCase() || '';
+            return r.title.toLowerCase().includes(searchTerm) ||
+                   r.description.toLowerCase().includes(searchTerm) ||
+                   ingredients.includes(searchTerm) ||
+                   r.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+          });
+        }
       }
       
       return { data: recipes };

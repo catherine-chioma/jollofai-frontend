@@ -168,15 +168,29 @@ const generateMockRecipes = (ingredientsInput: string): Recipe[] => {
 
 export default function Recipe() {
   const [ingredients, setIngredients] = useState("");
-  const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [searchMethod, setSearchMethod] = useState<"text" | "voice" | null>(
+    null
+  );
   const { showToast } = useToast();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImages(Array.from(e.target.files));
-    }
+  const handleVoiceInput = (text: string) => {
+    setIngredients(text);
+    setSearchMethod("voice");
+    showToast("Voice input detected! Ready to search.", "info");
+  };
+
+  const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIngredients(e.target.value);
+    setSearchMethod("text");
+  };
+
+  const handleReset = () => {
+    setIngredients("");
+    setRecipes([]);
+    setSearchMethod(null);
+    showToast("Form reset successfully", "info");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -186,25 +200,38 @@ export default function Recipe() {
       return;
     }
 
+    // Set search method to text if not already set
+    if (!searchMethod) {
+      setSearchMethod("text");
+    }
+
     setLoading(true);
     setRecipes([]);
 
     try {
+      // Log the search method for debugging
+      console.log(`Search initiated via: ${searchMethod || "text"}`);
+
       // Use ApiService to get recipes based on ingredients
       const response = await ApiService.getRecipes({
         search: ingredients,
         matchIngredients: true,
+        searchMethod: searchMethod || "text", // Include search method in API call
       });
 
       if (response.data && response.data.length > 0) {
         setRecipes(response.data);
-        showToast("Recipes found successfully!", "success");
+        const methodText =
+          searchMethod === "voice" ? "voice input" : "text input";
+        showToast(`Recipes found via ${methodText}!`, "success");
       } else {
         // Fallback: Generate mock recipes when no matches found
         const mockRecipes: Recipe[] = generateMockRecipes(ingredients);
         setRecipes(mockRecipes);
+        const methodText =
+          searchMethod === "voice" ? "voice input" : "text input";
         showToast(
-          "Generated sample recipes based on your ingredients!",
+          `Generated sample recipes from ${methodText} based on your ingredients!`,
           "success"
         );
       }
@@ -214,7 +241,12 @@ export default function Recipe() {
       // Fallback: Generate mock recipes when API is not available
       const mockRecipes: Recipe[] = generateMockRecipes(ingredients);
       setRecipes(mockRecipes);
-      showToast("Generated sample recipes (Demo mode)", "success");
+      const methodText =
+        searchMethod === "voice" ? "voice input" : "text input";
+      showToast(
+        `Generated sample recipes via ${methodText} (Demo mode)`,
+        "success"
+      );
     } finally {
       setLoading(false);
     }
@@ -231,6 +263,34 @@ export default function Recipe() {
           you.
         </p>
 
+        {/* Search Method Indicator */}
+        {searchMethod && (
+          <div
+            className={`mb-4 p-3 rounded-lg text-sm font-medium text-center ${
+              searchMethod === "voice"
+                ? "bg-blue-100 text-blue-800 border border-blue-200"
+                : "bg-green-100 text-green-800 border border-green-200"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              {searchMethod === "voice" ? (
+                <>
+                  🎤{" "}
+                  <span>
+                    Voice input detected - Ready to search with spoken
+                    ingredients
+                  </span>
+                </>
+              ) : (
+                <>
+                  ⌨️{" "}
+                  <span>Text input mode - Type your ingredients manually</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Ingredients Input */}
           <div>
@@ -243,7 +303,7 @@ export default function Recipe() {
             <textarea
               id="ingredients"
               value={ingredients}
-              onChange={(e) => setIngredients(e.target.value)}
+              onChange={handleTextInput}
               placeholder="Enter ingredients separated by commas (e.g., rice, tomatoes, chicken, onions)"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               rows={4}
@@ -266,45 +326,36 @@ export default function Recipe() {
               </ul>
             </div>
             <VoiceInput
-              onTranscript={(text) => setIngredients(text)}
+              onTranscript={handleVoiceInput}
               placeholder="Click the microphone and describe your ingredients..."
               className="mb-2"
             />
           </div>
 
-          {/* Image Upload */}
-          <div>
-            <label
-              htmlFor="images"
-              className="block text-sm font-medium text-gray-700 mb-2"
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              disabled={loading || !ingredients.trim()}
+              loading={loading}
+              className="flex-1"
+              size="lg"
             >
-              Upload Images (Optional)
-            </label>
-            <input
-              id="images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            {images.length > 0 && (
-              <p className="text-sm text-gray-500 mt-1">
-                {images.length} image{images.length > 1 ? "s" : ""} selected
-              </p>
+              Generate Recipes
+            </Button>
+            {(ingredients || searchMethod || recipes.length > 0) && (
+              <Button
+                type="button"
+                onClick={handleReset}
+                variant="secondary"
+                disabled={loading}
+                className="px-6"
+                size="lg"
+              >
+                Reset
+              </Button>
             )}
           </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={loading || !ingredients.trim()}
-            loading={loading}
-            className="w-full"
-            size="lg"
-          >
-            Generate Recipes
-          </Button>
         </form>
 
         {/* Loading State */}
