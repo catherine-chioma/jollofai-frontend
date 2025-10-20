@@ -373,7 +373,7 @@ export default function Home() {
               onClick={() => navigate("/recipe-discovery")}
               variant="outline"
               size="lg"
-              className="border-primary text-primary hover:bg-primary hover:text-white"
+              className="border-orange-500 text-orange-500 hover:bg-orange-600 hover:text-white"
             >
               Discover More Recipes
             </Button>
@@ -395,7 +395,7 @@ export default function Home() {
             <Button
               variant="secondary"
               size="lg"
-              className="bg-white text-primary hover:bg-gray-100"
+              className="bg-orange-500 text-white hover:bg-orange-600 border-orange-500 hover:border-orange-600"
             >
               Get Started Free
             </Button>
