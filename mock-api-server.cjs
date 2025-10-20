@@ -9,7 +9,8 @@ app.use(express.json());
 
 // Mock data
 const mockUsers = [
-  { id: '1', email: 'user@jollofai.com', fullName: 'John Doe', role: 'user' }
+  { id: '1', email: 'user@jollofai.com', fullName: 'John Doe', role: 'user' },
+  { id: '2', email: 'admin@jollofai.com', fullName: 'Admin User', role: 'admin' }
 ];
 
 const mockRecipes = [
@@ -155,8 +156,19 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
   
-  // Mock login - accept any email/password for demo
-  const user = mockUsers[0];
+  // Mock login - find user by email or create based on email pattern
+  let user = mockUsers.find(u => u.email === email);
+  
+  if (!user) {
+    // Create user based on email pattern
+    const isAdmin = email.toLowerCase().includes('admin') || email.toLowerCase() === 'admin@jollofai.com';
+    user = {
+      id: isAdmin ? 'admin_' + Date.now() : 'user_' + Date.now(),
+      email: email,
+      fullName: isAdmin ? 'Admin User' : 'Demo User',
+      role: isAdmin ? 'admin' : 'user'
+    };
+  }
   
   res.json({
     user,
@@ -171,14 +183,28 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Recipe endpoints
 app.get('/api/recipes', (req, res) => {
-  const { search, cuisine, difficulty, page = 1, limit = 10 } = req.query;
+  const { search, cuisine, difficulty, searchMethod, page = 1, limit = 10 } = req.query;
   let filteredRecipes = [...mockRecipes];
   
   if (search) {
-    filteredRecipes = filteredRecipes.filter(recipe => 
-      recipe.title.toLowerCase().includes(search.toLowerCase()) ||
-      recipe.description.toLowerCase().includes(search.toLowerCase())
-    );
+    console.log(`Recipe search via ${searchMethod || 'text'}: "${search}"`);
+    
+    if (searchMethod === 'voice') {
+      // More lenient matching for voice input
+      filteredRecipes = filteredRecipes.filter(recipe => 
+        recipe.title.toLowerCase().includes(search.toLowerCase()) ||
+        recipe.description.toLowerCase().includes(search.toLowerCase()) ||
+        recipe.ingredients.some(ingredient => 
+          ingredient.toLowerCase().includes(search.toLowerCase())
+        )
+      );
+    } else {
+      // Standard text search
+      filteredRecipes = filteredRecipes.filter(recipe => 
+        recipe.title.toLowerCase().includes(search.toLowerCase()) ||
+        recipe.description.toLowerCase().includes(search.toLowerCase())
+      );
+    }
   }
   
   if (cuisine) {
@@ -250,6 +276,52 @@ app.put('/api/users/profile', (req, res) => {
   res.json({ user: updatedUser, message: 'Profile updated successfully' });
 });
 
+// Pantry endpoints
+let mockPantryItems = [
+  {
+    id: '1',
+    name: 'Jasmine Rice',
+    quantity: 3,
+    unit: 'kg',
+    category: 'grains',
+    addedDate: new Date().toISOString(),
+    lowStockThreshold: 1,
+    imageUrl: '/ingredients/jasmine-rice.jpg'
+  },
+  {
+    id: '2', 
+    name: 'Roma Tomatoes',
+    quantity: 8,
+    unit: 'pieces',
+    category: 'vegetables',
+    addedDate: new Date().toISOString(),
+    lowStockThreshold: 5,
+    imageUrl: '/ingredients/tomatoes.jpg'
+  }
+];
+
+app.get('/api/pantry/items', (req, res) => {
+  res.json(mockPantryItems);
+});
+
+app.post('/api/pantry/items', (req, res) => {
+  const newItem = {
+    id: Date.now().toString(),
+    ...req.body,
+    addedDate: new Date().toISOString(),
+    imageUrl: req.body.image ? `/pantry-uploads/${Date.now()}-${req.body.name}.jpg` : undefined
+  };
+  
+  mockPantryItems.push(newItem);
+  res.json(newItem);
+});
+
+app.delete('/api/pantry/items/:id', (req, res) => {
+  const { id } = req.params;
+  mockPantryItems = mockPantryItems.filter(item => item.id !== id);
+  res.json({ message: 'Item deleted successfully' });
+});
+
 // Vendors endpoints
 app.get('/api/vendors', (req, res) => {
   const mockVendors = [
@@ -283,6 +355,9 @@ app.listen(PORT, () => {
   console.log(`   POST /api/auth/register`);
   console.log(`   GET  /api/recipes`);
   console.log(`   GET  /api/ingredients`);
+  console.log(`   GET  /api/pantry/items`);
+  console.log(`   POST /api/pantry/items`);
+  console.log(`   DELETE /api/pantry/items/:id`);
   console.log(`   GET  /api/vendors`);
   console.log(`   GET  /api/users/profile`);
 });
