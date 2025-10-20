@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useToast } from "../components/Toast";
-import axios, { API_ENDPOINTS } from "../config/api";
+import ApiService from "../services/apiService";
 
 interface Post {
   id: string;
@@ -96,12 +96,12 @@ export default function Community() {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [selectedCategory]);
 
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(API_ENDPOINTS.COMMUNITY.POSTS);
+      const response = await ApiService.getCommunityPosts(selectedCategory);
       setPosts(response.data);
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -135,10 +135,7 @@ export default function Community() {
           .filter((tag) => tag),
       };
 
-      const response = await axios.post(
-        API_ENDPOINTS.COMMUNITY.CREATE_POST,
-        postData
-      );
+      const response = await ApiService.createCommunityPost(postData);
       setPosts([response.data, ...posts]);
       setShowNewPost(false);
       setNewPost({ title: "", content: "", category: "general", tags: "" });
@@ -161,7 +158,7 @@ export default function Community() {
     }
 
     try {
-      await axios.post(API_ENDPOINTS.COMMUNITY.LIKE_POST(postId));
+      await ApiService.likeCommunityPost(postId);
 
       // Update the post in the local state
       setPosts((prevPosts) =>

@@ -7,269 +7,421 @@ import axios, { API_ENDPOINTS } from "../config/api";
 
 interface MealPlan {
   id: string;
+  userId: string;
   date: string;
-  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  meals: {
+    breakfast?: MealEntry;
+    lunch?: MealEntry;
+    dinner?: MealEntry;
+    snack?: MealEntry;
+  };
+  createdAt: string;
+  updatedAt: string;
+  version: number; // For data integrity
+  checksum: string; // For corruption detection
+}
+
+interface MealEntry {
+  id: string;
   recipeId: string;
   recipeName: string;
   servings: number;
   notes?: string;
-  createdAt: string;
+  calories?: number;
+  prepTime?: number;
 }
 
 interface Recipe {
   id: string;
   title: string;
-  description: string;
   imageUrl?: string;
   prepTime: number;
   cookTime: number;
-  servings: number;
   difficulty: string;
+  calories?: number;
 }
 
-interface WeeklyMealPlan {
-  [date: string]: {
-    breakfast?: MealPlan;
-    lunch?: MealPlan;
-    dinner?: MealPlan;
-    snack?: MealPlan;
+export default function MealPlanning() {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  // State management with corruption prevention
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+  const [selectedMeal, setSelectedMeal] = useState<
+    keyof MealPlan["meals"] | null
+  >(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddingMeal, setIsAddingMeal] = useState(false);
+  const [newMeal, setNewMeal] = useState<Partial<MealEntry>>({
+    servings: 1,
+    notes: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Data integrity functions
+  const generateChecksum = (mealPlan: Omit<MealPlan, "checksum">): string => {
+    const dataString = JSON.stringify({
+      id: mealPlan.id,
+      userId: mealPlan.userId,
+      date: mealPlan.date,
+      meals: mealPlan.meals,
+      version: mealPlan.version,
+    });
+    // Simple checksum (in production, use a proper hash function)
+    return btoa(dataString).slice(0, 16);
   };
-}
 
-export default function MealPlanning() {}
-const { user } = useAuth();
-const { showToast } = useToast();
-
-const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-const [recipes, setRecipes] = useState<Recipe[]>([]);
-const [isLoading, setIsLoading] = useState(true);
-const [currentWeek, setCurrentWeek] = useState(new Date());
-const [showAddModal, setShowAddModal] = useState(false);
-const [selectedDate, setSelectedDate] = useState("");
-const [selectedMealType, setSelectedMealType] = useState<
-  "breakfast" | "lunch" | "dinner" | "snack"
->("breakfast");
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-const [newMealPlan, setNewMealPlan] = useState({
-  recipeId: "",
-  servings: 1,
-  notes: "",
-});
-
-const mealTypes = [
-  {
-    id: "breakfast",
-    name: "Breakfast",
-    icon: "🌅",
-    color: "bg-yellow-100 text-yellow-800",
-  },
-  {
-    id: "lunch",
-    name: "Lunch",
-    icon: "☀️",
-    color: "bg-orange-100 text-orange-800",
-  },
-  {
-    id: "dinner",
-    name: "Dinner",
-    icon: "🌙",
-    color: "bg-blue-100 text-blue-800",
-  },
-  {
-    id: "snack",
-    name: "Snack",
-    icon: "🍿",
-    color: "bg-green-100 text-green-800",
-  },
-];
-
-useEffect(() => {
-  if (user) {
-    fetchMealPlans();
-    fetchRecipes();
-  }
-}, [user, currentWeek]);
-
-const fetchMealPlans = async () => {
-  try {
-    setIsLoading(true);
-    const startDate = getWeekStart(currentWeek);
-    const endDate = getWeekEnd(currentWeek);
-
-    const response = await axios.get("/meal-plans", {
-      params: {
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      },
-    });
-    setMealPlans(response.data);
-  } catch (error) {
-    console.error("Error fetching meal plans:", error);
-    showToast("Failed to load meal plans", "error");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-const fetchRecipes = async () => {
-  try {
-    const response = await axios.get("/recipes"); // Assuming we have a recipes endpoint
-    setRecipes(response.data);
-  } catch (error) {
-    console.error("Error fetching recipes:", error);
-  }
-};
-
-const getWeekStart = (date: Date) => {
-  const start = new Date(date);
-  const day = start.getDay();
-  const diff = start.getDate() - day;
-  return new Date(start.setDate(diff));
-};
-
-const getWeekEnd = (date: Date) => {
-  const end = getWeekStart(date);
-  return new Date(end.setDate(end.getDate() + 6));
-};
-
-const getWeekDays = () => {
-  const start = getWeekStart(currentWeek);
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(start);
-    day.setDate(start.getDate() + i);
-    days.push(day);
-  }
-  return days;
-};
-
-const formatDate = (date: Date) => {
-  return date.toISOString().split("T")[0];
-};
-
-const formatDisplayDate = (date: Date) => {
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const getMealPlanForDateAndType = (date: string, mealType: string) => {
-  return mealPlans.find(
-    (plan) => plan.date === date && plan.mealType === mealType
-  );
-};
-
-const organizeWeeklyMealPlan = (): WeeklyMealPlan => {
-  const weekDays = getWeekDays();
-  const weeklyPlan: WeeklyMealPlan = {};
-
-  weekDays.forEach((day) => {
-    const dateStr = formatDate(day);
-    weeklyPlan[dateStr] = {
-      breakfast: getMealPlanForDateAndType(dateStr, "breakfast"),
-      lunch: getMealPlanForDateAndType(dateStr, "lunch"),
-      dinner: getMealPlanForDateAndType(dateStr, "dinner"),
-      snack: getMealPlanForDateAndType(dateStr, "snack"),
-    };
-  });
-
-  return weeklyPlan;
-};
-
-const handleAddMealPlan = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  if (!user) {
-    showToast("You must be logged in to create meal plans", "error");
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    const mealPlanData = {
-      date: selectedDate,
-      mealType: selectedMealType,
-      recipeId: newMealPlan.recipeId,
-      servings: newMealPlan.servings,
-      notes: newMealPlan.notes.trim() || undefined,
-    };
-
-    const response = await axios.post("/meal-plans", mealPlanData);
-    setMealPlans([...mealPlans, response.data]);
-
-    setShowAddModal(false);
-    setNewMealPlan({
-      recipeId: "",
-      servings: 1,
-      notes: "",
-    });
-
-    showToast("Meal plan added successfully!", "success");
-  } catch (error: any) {
-    console.error("Error adding meal plan:", error);
-    showToast(
-      error.response?.data?.message || "Failed to add meal plan",
-      "error"
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-const handleDeleteMealPlan = async (planId: string) => {
-  try {
-    // Use the explicit endpoint path to avoid relying on API_ENDPOINTS shape
-    await axios.delete(`/meal-plans/${planId}`);
-    setMealPlans((prevPlans) => prevPlans.filter((plan) => plan.id !== planId));
-    showToast("Meal plan removed", "success");
-  } catch (error: any) {
-    console.error("Error deleting meal plan:", error);
-    showToast(
-      error?.response?.data?.message || "Failed to remove meal plan",
-      "error"
-    );
-  }
-};
-
-const handleOpenAddModal = (
-  date: string,
-  mealType: "breakfast" | "lunch" | "dinner" | "snack"
-) => {
-  setSelectedDate(date);
-  setSelectedMealType(mealType);
-  setShowAddModal(true);
-};
-
-const navigateWeek = (direction: "prev" | "next") => {
-  const newWeek = new Date(currentWeek);
-  const generateShoppingList = async () => {
+  const validateMealPlan = (mealPlan: MealPlan): boolean => {
     try {
-      const weekDays = getWeekDays();
-      const startDate = formatDate(weekDays[0]);
-      const endDate = formatDate(weekDays[6]);
+      const expectedChecksum = generateChecksum(mealPlan);
+      if (mealPlan.checksum !== expectedChecksum) {
+        console.warn(`Checksum mismatch for meal plan ${mealPlan.id}`);
+        return false;
+      }
 
-      // Call the explicit endpoint instead of API_ENDPOINTS.MEAL_PLANS.GENERATE_SHOPPING_LIST
-      const response = await axios.post("/meal-plans/generate-shopping-list", {
-        startDate,
-        endDate,
-      });
+      // Additional validation
+      if (!mealPlan.id || !mealPlan.userId || !mealPlan.date) {
+        console.warn(`Invalid meal plan structure: ${mealPlan.id}`);
+        return false;
+      }
 
-      // If the API returns the shopping list or a download URL, handle it here.
-      // For now, just notify success.
-      showToast("Shopping list generated", "success");
-      // Optionally handle response.data (e.g., download or navigate to a page)
-      return response.data;
-    } catch (error: any) {
-      console.error("Error generating shopping list:", error);
-      showToast("Failed to generate shopping list", "error");
+      return true;
+    } catch (error) {
+      console.error("Error validating meal plan:", error);
+      return false;
     }
   };
 
-  const weeklyPlan = organizeWeeklyMealPlan();
-  const weekDays = getWeekDays();
+  // Local storage backup system
+  const saveToLocalBackup = (mealPlans: MealPlan[]) => {
+    try {
+      const backup = {
+        data: mealPlans,
+        timestamp: new Date().toISOString(),
+        userId: user?.id,
+      };
+      localStorage.setItem(
+        `mealPlans_backup_${user?.id}`,
+        JSON.stringify(backup)
+      );
+    } catch (error) {
+      console.error("Failed to create local backup:", error);
+    }
+  };
+
+  const loadFromLocalBackup = (): MealPlan[] => {
+    try {
+      const backupKey = `mealPlans_backup_${user?.id}`;
+      const backup = localStorage.getItem(backupKey);
+      if (backup) {
+        const parsed = JSON.parse(backup);
+        if (parsed.userId === user?.id && parsed.data) {
+          return parsed.data.filter(validateMealPlan);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load local backup:", error);
+    }
+    return [];
+  };
+
+  // Fetch data with error recovery
+  const fetchMealPlans = async () => {
+    try {
+      setIsLoading(true);
+      const startDate = new Date(selectedDate);
+      startDate.setDate(startDate.getDate() - 3); // Load a week's worth
+      const endDate = new Date(selectedDate);
+      endDate.setDate(endDate.getDate() + 3);
+
+      const response = await axios.get(API_ENDPOINTS.MEAL_PLANS.GET_PLANS, {
+        params: {
+          startDate: startDate.toISOString().split("T")[0],
+          endDate: endDate.toISOString().split("T")[0],
+        },
+        timeout: 10000, // 10 second timeout
+      });
+
+      const validPlans = response.data.filter(validateMealPlan);
+      const corruptedCount = response.data.length - validPlans.length;
+
+      if (corruptedCount > 0) {
+        showToast(
+          `Found ${corruptedCount} corrupted meal plan(s). Using backup data.`,
+          "warning"
+        );
+        // Attempt to restore from backup
+        const backupPlans = loadFromLocalBackup();
+        const mergedPlans = [...validPlans, ...backupPlans].reduce(
+          (acc: MealPlan[], plan) => {
+            const existing = acc.find((p: MealPlan) => p.id === plan.id);
+            if (!existing || plan.version > existing.version) {
+              acc = acc.filter((p: MealPlan) => p.id !== plan.id);
+              acc.push(plan);
+            }
+            return acc;
+          },
+          [] as MealPlan[]
+        );
+        setMealPlans(mergedPlans);
+      } else {
+        setMealPlans(validPlans);
+      }
+
+      // Create backup after successful load
+      saveToLocalBackup(validPlans);
+    } catch (error) {
+      console.error("Error fetching meal plans:", error);
+      showToast(
+        "Failed to load meal plans from server. Loading from backup...",
+        "warning"
+      );
+
+      // Fallback to local backup
+      const backupPlans = loadFromLocalBackup();
+      setMealPlans(backupPlans);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRecipes = async () => {
+    try {
+      const response = await axios.get("/api/recipes", { timeout: 10000 });
+      setRecipes(response.data);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      showToast("Failed to load recipes", "error");
+    }
+  };
+
+  // Save meal plan with corruption prevention
+  const saveMealPlan = async (mealPlan: MealPlan) => {
+    try {
+      // Validate before saving
+      if (!validateMealPlan(mealPlan)) {
+        throw new Error("Invalid meal plan data");
+      }
+
+      const response = await axios.post(
+        API_ENDPOINTS.MEAL_PLANS.CREATE,
+        mealPlan,
+        {
+          timeout: 15000,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Data-Version": mealPlan.version.toString(),
+          },
+        }
+      );
+
+      // Verify the saved data
+      if (!validateMealPlan(response.data)) {
+        throw new Error("Server returned corrupted data");
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error saving meal plan:", error);
+
+      // Save to local backup if server fails
+      const currentBackup = loadFromLocalBackup();
+      const updatedBackup = [
+        ...currentBackup.filter((p) => p.id !== mealPlan.id),
+        mealPlan,
+      ];
+      saveToLocalBackup(updatedBackup);
+
+      throw error;
+    }
+  };
+
+  // Add meal with retry logic
+  const addMealToDate = async (
+    date: string,
+    mealType: keyof MealPlan["meals"],
+    meal: MealEntry
+  ) => {
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        let existingPlan = mealPlans.find((p) => p.date === date);
+
+        if (!existingPlan) {
+          // Create new meal plan
+          existingPlan = {
+            id: `mp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            userId: user!.id,
+            date,
+            meals: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            version: 1,
+            checksum: "",
+          };
+        }
+
+        // Update the meal plan
+        const updatedPlan: MealPlan = {
+          ...existingPlan,
+          meals: {
+            ...existingPlan.meals,
+            [mealType]: meal,
+          },
+          updatedAt: new Date().toISOString(),
+          version: existingPlan.version + 1,
+          checksum: "",
+        };
+
+        // Generate checksum
+        updatedPlan.checksum = generateChecksum(updatedPlan);
+
+        // Save to server
+        const savedPlan = await saveMealPlan(updatedPlan);
+
+        // Update local state
+        setMealPlans((prev) => {
+          const filtered = prev.filter((p) => p.id !== savedPlan.id);
+          return [...filtered, savedPlan];
+        });
+
+        showToast("Meal added successfully!", "success");
+        return savedPlan;
+      } catch (error) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          showToast("Failed to save meal after multiple attempts", "error");
+          throw error;
+        }
+        // Wait before retry
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  };
+
+  // Remove meal
+  const removeMealFromDate = async (
+    date: string,
+    mealType: keyof MealPlan["meals"]
+  ) => {
+    try {
+      const existingPlan = mealPlans.find((p) => p.date === date);
+      if (!existingPlan) return;
+
+      const updatedMeals = { ...existingPlan.meals };
+      delete updatedMeals[mealType];
+
+      const updatedPlan: MealPlan = {
+        ...existingPlan,
+        meals: updatedMeals,
+        updatedAt: new Date().toISOString(),
+        version: existingPlan.version + 1,
+        checksum: "",
+      };
+
+      updatedPlan.checksum = generateChecksum(updatedPlan);
+
+      const savedPlan = await saveMealPlan(updatedPlan);
+
+      setMealPlans((prev) => {
+        const filtered = prev.filter((p) => p.id !== savedPlan.id);
+        return [...filtered, savedPlan];
+      });
+
+      showToast("Meal removed successfully!", "success");
+    } catch (error) {
+      showToast("Failed to remove meal", "error");
+    }
+  };
+
+  // Handle adding meal
+  const handleAddMeal = async () => {
+    if (!newMeal.recipeId || !selectedMeal) return;
+
+    setIsAddingMeal(true);
+    try {
+      const recipe = recipes.find((r) => r.id === newMeal.recipeId);
+      if (!recipe) throw new Error("Recipe not found");
+
+      const meal: MealEntry = {
+        id: `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        recipeId: recipe.id,
+        recipeName: recipe.title,
+        servings: newMeal.servings || 1,
+        notes: newMeal.notes || "",
+        calories: recipe.calories,
+        prepTime: recipe.prepTime,
+      };
+
+      await addMealToDate(selectedDate, selectedMeal, meal);
+
+      // Reset form
+      setNewMeal({ servings: 1, notes: "" });
+      setSelectedMeal(null);
+    } catch (error) {
+      console.error("Error adding meal:", error);
+      showToast("Failed to add meal", "error");
+    } finally {
+      setIsAddingMeal(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchMealPlans();
+      fetchRecipes();
+    }
+  }, [user, selectedDate]);
+
+  // Auto-backup every 5 minutes
+  useEffect(() => {
+    if (mealPlans.length > 0) {
+      const interval = setInterval(() => {
+        saveToLocalBackup(mealPlans);
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearInterval(interval);
+    }
+  }, [mealPlans, user]);
+
+  const currentMealPlan = mealPlans.find((p) => p.date === selectedDate);
+  const filteredRecipes = recipes.filter((r) =>
+    r.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const mealTypes = [
+    {
+      id: "breakfast" as const,
+      name: "Breakfast",
+      icon: "🌅",
+      color: "bg-yellow-100 border-yellow-300",
+    },
+    {
+      id: "lunch" as const,
+      name: "Lunch",
+      icon: "☀️",
+      color: "bg-orange-100 border-orange-300",
+    },
+    {
+      id: "dinner" as const,
+      name: "Dinner",
+      icon: "🌙",
+      color: "bg-blue-100 border-blue-300",
+    },
+    {
+      id: "snack" as const,
+      name: "Snack",
+      icon: "🍿",
+      color: "bg-green-100 border-green-300",
+    },
+  ];
 
   if (!user) {
     return (
@@ -279,7 +431,7 @@ const navigateWeek = (direction: "prev" | "next") => {
             Meal Planning
           </h1>
           <p className="text-gray-600 mb-6">
-            Please sign in to access meal planning features.
+            Please sign in to create and manage your meal plans.
           </p>
           <Button onClick={() => (window.location.href = "/signin")}>
             Sign In
@@ -291,399 +443,242 @@ const navigateWeek = (direction: "prev" | "next") => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="container mx-auto max-w-7xl px-6 py-8">
+      <div className="container mx-auto max-w-6xl px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Meal Planning
           </h1>
           <p className="text-lg text-gray-600">
-            Plan your weekly meals and generate shopping lists automatically.
+            Plan your meals and maintain a healthy, organized diet.
           </p>
         </div>
 
-        {/* Week Navigation */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between">
+        {/* Date Selector */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-gray-700">Date:</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              />
               <Button
-                onClick={() => navigateWeek("prev")}
+                onClick={() =>
+                  setSelectedDate(new Date().toISOString().split("T")[0])
+                }
                 variant="outline"
                 size="sm"
               >
-                ← Previous Week
-              </Button>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {formatDisplayDate(weekDays[0])} -{" "}
-                {formatDisplayDate(weekDays[6])}
-              </h2>
-              <Button
-                onClick={() => navigateWeek("next")}
-                variant="outline"
-                size="sm"
-              >
-                Next Week →
+                Today
               </Button>
             </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={generateShoppingList}
-                variant="outline"
-                className="text-green-600 border-green-300 hover:bg-green-50"
-              >
-                🛒 Generate Shopping List
-              </Button>
-              <Button
-                onClick={() => setCurrentWeek(new Date())}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                📅 This Week
-              </Button>
+            <div className="text-sm text-gray-500">
+              {mealPlans.length} meal plan(s) loaded
             </div>
           </div>
         </div>
 
-        {/* Meal Planning Calendar */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" message="Loading meal plans..." />
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* Calendar Header */}
-            <div className="grid grid-cols-8 border-b border-gray-200">
-              <div className="p-4 bg-gray-50 border-r border-gray-200">
-                <span className="text-sm font-medium text-gray-700">
-                  Meal Type
-                </span>
-              </div>
-              {weekDays.map((day, index) => (
-                <div
-                  key={index}
-                  className={`p-4 text-center border-r border-gray-200 last:border-r-0 ${
-                    formatDate(day) === formatDate(new Date())
-                      ? "bg-primary text-white"
-                      : "bg-gray-50"
-                  }`}
-                >
-                  <div className="text-sm font-medium">
-                    {day.toLocaleDateString("en-US", { weekday: "short" })}
-                  </div>
-                  <div className="text-lg font-bold">{day.getDate()}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar Body */}
-            {mealTypes.map((mealType) => (
-              <div
-                key={mealType.id}
-                className="grid grid-cols-8 border-b border-gray-200 last:border-b-0"
-              >
-                {/* Meal Type Header */}
-                <div className="p-4 bg-gray-50 border-r border-gray-200 flex items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{mealType.icon}</span>
-                    <span className="font-medium text-gray-900">
-                      {mealType.name}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Daily Meal Slots */}
-                {weekDays.map((day, dayIndex) => {
-                  const dateStr = formatDate(day);
-                  const mealPlan =
-                    weeklyPlan[dateStr]?.[
-                      mealType.id as keyof (typeof weeklyPlan)[string]
-                    ];
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Meal Plan Grid */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {mealTypes.map((mealType) => {
+                  const meal = currentMealPlan?.meals[mealType.id];
 
                   return (
                     <div
-                      key={dayIndex}
-                      className="p-3 border-r border-gray-200 last:border-r-0 min-h-[120px] relative group hover:bg-gray-50 transition-colors"
+                      key={mealType.id}
+                      className={`border-2 rounded-lg p-4 ${mealType.color}`}
                     >
-                      {mealPlan ? (
-                        <div className="h-full">
-                          <div className="bg-white rounded-lg border border-gray-200 p-3 h-full shadow-sm">
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
-                                {mealPlan.recipeName}
-                              </h4>
-                              <button
-                                onClick={() =>
-                                  handleDeleteMealPlan(mealPlan.id)
-                                }
-                                className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              {mealPlan.servings} serving
-                              {mealPlan.servings !== 1 ? "s" : ""}
-                            </div>
-                            {mealPlan.notes && (
-                              <div className="text-xs text-gray-500 mt-2 line-clamp-2">
-                                {mealPlan.notes}
-                              </div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{mealType.icon}</span>
+                          <h3 className="font-semibold text-gray-900">
+                            {mealType.name}
+                          </h3>
+                        </div>
+                        <Button
+                          onClick={() => setSelectedMeal(mealType.id)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {meal ? "Change" : "Add"}
+                        </Button>
+                      </div>
+
+                      {meal ? (
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-gray-800">
+                            {meal.recipeName}
+                          </h4>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              👥 {meal.servings} serving
+                              {meal.servings > 1 ? "s" : ""}
+                            </span>
+                            {meal.calories && (
+                              <span>🔥 {meal.calories} cal</span>
                             )}
+                            {meal.prepTime && (
+                              <span>⏱️ {meal.prepTime}min</span>
+                            )}
+                          </div>
+                          {meal.notes && (
+                            <p className="text-sm text-gray-600 italic">
+                              {meal.notes}
+                            </p>
+                          )}
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              onClick={() =>
+                                removeMealFromDate(selectedDate, mealType.id)
+                              }
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                            >
+                              Remove
+                            </Button>
                           </div>
                         </div>
                       ) : (
-                        <button
-                          onClick={() =>
-                            handleOpenAddModal(dateStr, mealType.id as any)
-                          }
-                          className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors group-hover:border-primary/50"
-                        >
-                          <div className="text-center">
-                            <div className="text-2xl text-gray-400 group-hover:text-primary mb-1">
-                              +
-                            </div>
-                            <div className="text-xs text-gray-500 group-hover:text-primary">
-                              Add Meal
-                            </div>
-                          </div>
-                        </button>
+                        <div className="text-center py-6">
+                          <p className="text-gray-500 text-sm mb-2">
+                            No meal planned
+                          </p>
+                          <Button
+                            onClick={() => setSelectedMeal(mealType.id)}
+                            size="sm"
+                          >
+                            Add Meal
+                          </Button>
+                        </div>
                       )}
                     </div>
                   );
                 })}
               </div>
-            ))}
+            </div>
+
+            {/* Recipe Selector Sidebar */}
+            <div className="lg:col-span-1">
+              {selectedMeal && (
+                <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Add {mealTypes.find((m) => m.id === selectedMeal)?.name}
+                    </h3>
+                    <Button
+                      onClick={() => setSelectedMeal(null)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Search */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Search Recipes
+                      </label>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search for recipes..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      />
+                    </div>
+
+                    {/* Recipe Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Recipe
+                      </label>
+                      <select
+                        value={newMeal.recipeId || ""}
+                        onChange={(e) =>
+                          setNewMeal((prev) => ({
+                            ...prev,
+                            recipeId: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Choose a recipe</option>
+                        {filteredRecipes.map((recipe) => (
+                          <option key={recipe.id} value={recipe.id}>
+                            {recipe.title} ({recipe.prepTime}min)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Servings */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Servings
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={newMeal.servings || 1}
+                        onChange={(e) =>
+                          setNewMeal((prev) => ({
+                            ...prev,
+                            servings: parseInt(e.target.value),
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      />
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes (Optional)
+                      </label>
+                      <textarea
+                        value={newMeal.notes || ""}
+                        onChange={(e) =>
+                          setNewMeal((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        placeholder="Any special notes..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      />
+                    </div>
+
+                    {/* Add Button */}
+                    <Button
+                      onClick={handleAddMeal}
+                      disabled={!newMeal.recipeId || isAddingMeal}
+                      loading={isAddingMeal}
+                      className="w-full"
+                    >
+                      Add to Meal Plan
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Weekly Summary */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              This Week's Stats
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Planned Meals:</span>
-                <span className="font-medium">{mealPlans.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Unique Recipes:</span>
-                <span className="font-medium">
-                  {new Set(mealPlans.map((plan) => plan.recipeId)).size}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Servings:</span>
-                <span className="font-medium">
-                  {mealPlans.reduce((sum, plan) => sum + plan.servings, 0)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Meal Distribution
-            </h3>
-            <div className="space-y-3">
-              {mealTypes.map((mealType) => {
-                const count = mealPlans.filter(
-                  (plan) => plan.mealType === mealType.id
-                ).length;
-                return (
-                  <div
-                    key={mealType.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{mealType.icon}</span>
-                      <span className="text-gray-600">{mealType.name}:</span>
-                    </div>
-                    <span className="font-medium">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <Button
-                onClick={generateShoppingList}
-                variant="outline"
-                className="w-full text-left justify-start"
-              >
-                🛒 Generate Shopping List
-              </Button>
-              <Button
-                onClick={() => {
-                  /* Navigate to recipes */
-                }}
-                variant="outline"
-                className="w-full text-left justify-start"
-              >
-                📖 Browse Recipes
-              </Button>
-              <Button
-                onClick={() => {
-                  /* Navigate to pantry */
-                }}
-                variant="outline"
-                className="w-full text-left justify-start"
-              >
-                🥫 Check Pantry
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
-
-      {/* Add Meal Plan Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Add {mealTypes.find((m) => m.id === selectedMealType)?.name}{" "}
-                  Plan
-                </h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600">
-                  Planning for:{" "}
-                  <span className="font-medium">
-                    {new Date(selectedDate).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Meal:{" "}
-                  <span className="font-medium capitalize">
-                    {selectedMealType}
-                  </span>
-                </div>
-              </div>
-
-              <form onSubmit={handleAddMealPlan} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Recipe *
-                  </label>
-                  <select
-                    value={newMealPlan.recipeId}
-                    onChange={(e) =>
-                      setNewMealPlan({
-                        ...newMealPlan,
-                        recipeId: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                    required
-                  >
-                    <option value="">Select a recipe</option>
-                    {recipes.map((recipe) => (
-                      <option key={recipe.id} value={recipe.id}>
-                        {recipe.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Servings
-                  </label>
-                  <input
-                    type="number"
-                    value={newMealPlan.servings}
-                    onChange={(e) =>
-                      setNewMealPlan({
-                        ...newMealPlan,
-                        servings: parseInt(e.target.value) || 1,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                    min="1"
-                    max="20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes (Optional)
-                  </label>
-                  <textarea
-                    value={newMealPlan.notes}
-                    onChange={(e) =>
-                      setNewMealPlan({ ...newMealPlan, notes: e.target.value })
-                    }
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                    placeholder="Any special notes for this meal..."
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="submit"
-                    loading={isSubmitting}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white"
-                  >
-                    Add Meal Plan
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowAddModal(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
+}

@@ -92,6 +92,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
 
+    // Check if we're in offline mode
+    const offlineMode = import.meta.env.VITE_OFFLINE_MODE === "true";
+
+    if (offlineMode) {
+      // Mock successful login for development
+      const mockUser: User = {
+        id: "1",
+        email: email,
+        fullName: "Demo User",
+        role: "user",
+      };
+
+      const mockToken = "demo_token_" + Date.now();
+
+      setUser(mockUser);
+      setToken(mockToken);
+      localStorage.setItem("jollofai_user", JSON.stringify(mockUser));
+      localStorage.setItem("jollofai_token", mockToken);
+
+      setIsLoading(false);
+      return true;
+    }
+
     try {
       const response = await axios.post<AuthResponse>("/auth/login", {
         email,
@@ -121,6 +144,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ): Promise<boolean> => {
     setIsLoading(true);
 
+    // Check if we're in offline mode
+    const offlineMode = import.meta.env.VITE_OFFLINE_MODE === "true";
+
+    if (offlineMode) {
+      // Mock successful signup for development
+      const mockUser: User = {
+        id: Date.now().toString(),
+        email: email,
+        fullName: fullName,
+        role: "user",
+      };
+
+      const mockToken = "demo_token_" + Date.now();
+
+      setUser(mockUser);
+      setToken(mockToken);
+      localStorage.setItem("jollofai_user", JSON.stringify(mockUser));
+      localStorage.setItem("jollofai_token", mockToken);
+
+      setIsLoading(false);
+      return true;
+    }
+
     try {
       const response = await axios.post<AuthResponse>("/auth/register", {
         fullName,
@@ -145,9 +191,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
+    const offlineMode = import.meta.env.VITE_OFFLINE_MODE === "true";
+
     try {
-      // Call the logout API endpoint if user is logged in
-      if (token) {
+      // Call the logout API endpoint if user is logged in and not in offline mode
+      if (token && !offlineMode) {
         await axios.post(API_ENDPOINTS.AUTH.LOGOUT);
       }
     } catch (error) {

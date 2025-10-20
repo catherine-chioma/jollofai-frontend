@@ -7,7 +7,7 @@ import "./index.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <App /> {/* ✅ No need for another <AuthProvider> here */}
     </BrowserRouter>
   </React.StrictMode>
 );

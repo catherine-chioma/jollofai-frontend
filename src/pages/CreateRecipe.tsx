@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import CameraScanner from "../components/CameraScanner";
 import Button from "../components/Button";
@@ -35,6 +35,7 @@ interface RecipeData {
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("basic");
   const [showScanner, setShowScanner] = useState(false);
@@ -248,6 +249,58 @@ export default function CreateRecipe() {
     { id: "instructions", label: "Instructions", icon: "📝" },
     { id: "nutrition", label: "Nutrition", icon: "📊" },
   ];
+
+  // Authentication check
+  if (!user) {
+    const handleSignIn = () => {
+      // Store current location to redirect back after login
+      navigate("/signin", {
+        state: {
+          from: location.pathname,
+          message: "Please sign in to create recipes",
+        },
+      });
+    };
+
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🔒</div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Sign In Required
+            </h1>
+            <p className="text-gray-600 mb-6">
+              You need to be signed in to create and share recipes with the
+              JollofAI community.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <Button
+              onClick={handleSignIn}
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 text-lg font-semibold"
+            >
+              Sign In to Continue
+            </Button>
+
+            <p className="text-sm text-gray-500">
+              Don't have an account? You'll be able to create one after clicking
+              Sign In.
+            </p>
+          </div>
+
+          <div className="mt-8 p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <p className="text-orange-800 text-sm">
+              💡 <strong>Why sign in?</strong> Creating an account lets you save
+              your recipes, get personalized recommendations, and connect with
+              other food enthusiasts.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

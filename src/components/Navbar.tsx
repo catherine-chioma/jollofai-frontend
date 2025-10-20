@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "./Button";
@@ -8,22 +8,54 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
 
-  const navLinks = [
+  // Main navigation links (shown directly in navbar)
+  const mainNavLinks = [
     { to: "/", label: "Home" },
+    { to: "/about", label: "About" },
     { to: "/recipe-generator", label: "Recipes" },
-    { to: "/recipe-discovery", label: "Discover" },
-    { to: "/create-recipe", label: "Create Recipe" },
     { to: "/ingredients", label: "Ingredients" },
+    { to: "/ai-chat", label: "AI Chat" },
+  ];
+
+  // Additional links (shown in More dropdown)
+  const moreNavLinks = [
+    { to: "/recipe-discovery", label: "Discover Recipes" },
+    { to: "/create-recipe", label: "Create Recipe" },
     { to: "/pantry", label: "Pantry" },
     { to: "/meal-planning", label: "Meal Plans" },
     { to: "/nutrition", label: "Nutrition" },
-    { to: "/ai-chat", label: "AI Chat" },
-    { to: "/about", label: "About Us" },
+    { to: "/community", label: "Community" },
+    { to: "/marketplace", label: "Marketplace" },
+    { to: "/shopping-list", label: "Shopping List" },
+    { to: "/blog", label: "Blog" },
+    { to: "/help-center", label: "Help Center" },
   ];
 
   const isActiveLink = (path: string) => location.pathname === path;
+
+  // Close More dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+
+    if (isMoreMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMoreMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -59,7 +91,7 @@ export default function Navbar() {
           </div>
 
           <nav className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link) => (
+            {mainNavLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -72,6 +104,48 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+
+            {/* More dropdown */}
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                className="flex items-center text-sm font-medium text-gray-700 hover:text-orange-600 transition-all duration-200"
+              >
+                More
+                <svg
+                  className="w-4 h-4 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {isMoreMenuOpen && (
+                <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  {moreNavLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={`block px-4 py-2 text-sm transition-colors ${
+                        isActiveLink(link.to)
+                          ? "bg-orange-100 text-orange-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -215,7 +289,8 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="lg:hidden border-t border-gray-100">
             <nav className="px-4 py-4 space-y-2">
-              {navLinks.map((link) => (
+              {/* Main navigation links */}
+              {mainNavLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -229,6 +304,27 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+
+              {/* More section divider */}
+              <div className="border-t border-gray-100 my-2 pt-2">
+                <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  More
+                </div>
+                {moreNavLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActiveLink(link.to)
+                        ? "bg-orange-100 text-orange-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
 
               <div className="pt-4 border-t border-gray-100 mt-4">
                 {user ? (

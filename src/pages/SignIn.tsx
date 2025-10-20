@@ -15,6 +15,7 @@ export default function SignIn() {
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/dashboard";
+  const redirectMessage = location.state?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +51,13 @@ export default function SignIn() {
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
+        {redirectMessage && (
+          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <p className="text-sm text-orange-800 text-center">
+              {redirectMessage}
+            </p>
+          </div>
+        )}
         <p className="mt-2 text-center text-sm text-gray-600">
           Or{" "}
           <Link

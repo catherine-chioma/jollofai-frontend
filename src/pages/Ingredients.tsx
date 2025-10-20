@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import CameraScanner from "../components/CameraScanner";
 
 interface Ingredient {
   id: string;
@@ -505,6 +506,7 @@ export default function Ingredients() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedIngredient, setSelectedIngredient] =
     useState<Ingredient | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const filteredIngredients = useMemo(() => {
     return SAMPLE_INGREDIENTS.filter((ingredient) => {

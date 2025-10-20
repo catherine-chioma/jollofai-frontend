@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import VoiceInput from "../components/VoiceInput";
 import { useToast } from "../components/Toast";
-import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
+import ApiService from "../services/apiService";
 
 interface Recipe {
   id: string;
@@ -191,31 +190,31 @@ export default function Recipe() {
     setRecipes([]);
 
     try {
-      const formData = new FormData();
-      formData.append("ingredients", ingredients);
-      images.forEach((image, index) => {
-        formData.append(`image_${index}`, image);
+      // Use ApiService to get recipes based on ingredients
+      const response = await ApiService.getRecipes({
+        search: ingredients,
+        matchIngredients: true,
       });
 
-      const response = await axios.post(
-        `${API_BASE_URL}${API_ENDPOINTS.RECIPES.MATCH_INGREDIENTS}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      setRecipes(response.data.recipes || []);
-      showToast("Recipes generated successfully!", "success");
+      if (response.data && response.data.length > 0) {
+        setRecipes(response.data);
+        showToast("Recipes found successfully!", "success");
+      } else {
+        // Fallback: Generate mock recipes when no matches found
+        const mockRecipes: Recipe[] = generateMockRecipes(ingredients);
+        setRecipes(mockRecipes);
+        showToast(
+          "Generated sample recipes based on your ingredients!",
+          "success"
+        );
+      }
     } catch (err) {
       console.error("Recipe generation error:", err);
 
       // Fallback: Generate mock recipes when API is not available
       const mockRecipes: Recipe[] = generateMockRecipes(ingredients);
       setRecipes(mockRecipes);
-      showToast("Recipes generated successfully! (Demo mode)", "success");
+      showToast("Generated sample recipes (Demo mode)", "success");
     } finally {
       setLoading(false);
     }

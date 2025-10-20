@@ -13,6 +13,8 @@ interface Vendor {
   rating: number;
   reviews: number;
   location: string;
+  coordinates?: { lat: number; lng: number };
+  distance?: number; // calculated distance from user
   category: "ingredients" | "spices" | "equipment" | "groceries";
   verified: boolean;
   deliveryTime: string;
@@ -49,6 +51,15 @@ export default function VendorMarketplace() {
   const [sortBy, setSortBy] = useState("rating");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationPermission, setLocationPermission] = useState<
+    "granted" | "denied" | "prompt"
+  >("prompt");
+  const [maxDistance, setMaxDistance] = useState<number>(10); // km
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const { showToast } = useToast();
 
   const categories = [
@@ -62,7 +73,83 @@ export default function VendorMarketplace() {
   useEffect(() => {
     fetchVendors();
     loadCart();
+    checkLocationPermission();
   }, []);
+
+  const checkLocationPermission = async () => {
+    if ("geolocation" in navigator) {
+      try {
+        const permission = await navigator.permissions.query({
+          name: "geolocation",
+        });
+        setLocationPermission(permission.state as any);
+
+        if (permission.state === "granted") {
+          getCurrentLocation();
+        }
+      } catch (error) {
+        console.log("Location permission check failed:", error);
+      }
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000, // 5 minutes
+          });
+        }
+      );
+
+      const location = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      setUserLocation(location);
+      setLocationPermission("granted");
+      showToast("Location detected! Showing nearby vendors", "success");
+    } catch (error: any) {
+      setLocationPermission("denied");
+      if (error.code === error.PERMISSION_DENIED) {
+        showToast(
+          "Location access denied. Enable location for nearby vendors.",
+          "warning"
+        );
+      } else if (error.code === error.TIMEOUT) {
+        showToast("Location request timed out. Please try again.", "warning");
+      } else {
+        showToast("Unable to get your location. Showing all vendors.", "info");
+      }
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
+
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number
+  ): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   const fetchVendors = async () => {
     try {

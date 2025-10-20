@@ -152,12 +152,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/help-center"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -199,24 +199,24 @@ export default function Footer() {
               © {new Date().getFullYear()} JollofAI. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a
-                href="#"
+              <Link
+                to="/privacy"
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Privacy Policy
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/terms"
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Terms of Service
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/cookie-policy"
                 className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Cookie Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>

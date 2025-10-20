@@ -27,23 +27,23 @@ import PasswordReset from "./pages/PasswordReset";
 import ResetPassword from "./pages/ResetPassword";
 import Pantry from "./pages/Pantry";
 import ShoppingList from "./pages/ShoppingList";
-import MealPlanning from "./pages/MealPlanning";
+// import MealPlanning from "./pages/MealPlanning"; // Temporarily disabled
 import NutritionDashboard from "./pages/NutritionDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import CreateRecipe from "./pages/CreateRecipe";
-// Privacy page inlined below
+import MealPlanning from "./pages/MealPlanning";
 import Terms from "./pages/Terms";
-
-// MealPlanning may be typed as a function returning void in its module; cast it to a React component type for use in JSX.
-const MealPlanningComponent =
-  MealPlanning as unknown as React.ComponentType<any>;
+import Privacy from "./pages/Privacy";
+import CookiePolicy from "./pages/CookiePolicy";
+import APITester from "./pages/APITester";
+import DiagnosticPage from "./pages/DiagnosticPage";
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <UserManagementProvider>
-          <ToastProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <UserManagementProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
@@ -74,9 +74,12 @@ export default function App() {
                     element={<APIDocumentation />}
                   />
                   <Route path="/about" element={<About />} />
-                  <Route path="/help-center" element={<About />} />
+                  <Route path="/help-center" element={<HelpCenter />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/cookie-policy" element={<CookiePolicy />} />
+                  <Route path="/api-tester" element={<APITester />} />
+                  <Route path="/diagnostic" element={<DiagnosticPage />} />
                   <Route path="/signup" element={<SignUp />} />
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/password-reset" element={<PasswordReset />} />
@@ -109,7 +112,7 @@ export default function App() {
                     path="/meal-planning"
                     element={
                       <ProtectedRoute>
-                        <MealPlanningComponent />
+                        <MealPlanning />
                       </ProtectedRoute>
                     }
                   />
@@ -142,9 +145,9 @@ export default function App() {
               </main>
               <Footer />
             </div>
-          </ToastProvider>
-        </UserManagementProvider>
-      </AuthProvider>
+          </UserManagementProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
@@ -160,30 +163,6 @@ function NotFound() {
         </h1>
         <p className="text-gray-600 mb-6">
           The recipe you're looking for doesn't exist on our menu.
-        </p>
-        <a
-          href="/"
-          className="inline-flex items-center bg-primary text-white px-6 py-3 rounded-md font-medium hover:opacity-90 transition-opacity"
-        >
-          Return Home
-        </a>
-      </div>
-    </div>
-  );
-}
-
-// Inlined Privacy Page (placeholder — replace with your full privacy policy)
-function Privacy() {
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="max-w-3xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Privacy Policy
-        </h1>
-        <p className="text-gray-600 mb-4">
-          We respect your privacy and only collect the information necessary to
-          provide and improve our services. This is a placeholder privacy policy
-          — please replace with your full policy text.
         </p>
         <a
           href="/"
