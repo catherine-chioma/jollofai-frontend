@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import { ToastProvider } from "./components/Toast";
 import Home from "./pages/Home";
 import Recipe from "./pages/Recipe";
@@ -60,9 +61,9 @@ export default function App() {
                   <Route
                     path="/create-recipe"
                     element={
-                      <ProtectedRoute>
+                      <AdminRoute>
                         <CreateRecipe />
-                      </ProtectedRoute>
+                      </AdminRoute>
                     }
                   />
                   <Route path="/ai-chat" element={<AIChatPage />} />

@@ -97,11 +97,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (offlineMode) {
       // Mock successful login for development
+      // Check for admin email to assign admin role
+      const isAdmin =
+        email.toLowerCase() === "admin@jollofai.com" ||
+        email.toLowerCase() === "admin@example.com" ||
+        email.toLowerCase().includes("admin");
+
       const mockUser: User = {
-        id: "1",
+        id: isAdmin ? "admin_1" : "1",
         email: email,
-        fullName: "Demo User",
-        role: "user",
+        fullName: isAdmin ? "Admin User" : "Demo User",
+        role: isAdmin ? "admin" : "user",
       };
 
       const mockToken = "demo_token_" + Date.now();
