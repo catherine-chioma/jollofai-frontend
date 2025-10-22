@@ -5,7 +5,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    REGISTER: '/auth/register',
+    REGISTER: '/auth/signup',  // Changed from register to signup to match backend
     LOGIN: '/auth/login',
     GOOGLE: '/auth/google',
     GOOGLE_CALLBACK: '/auth/google/callback',

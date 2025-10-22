@@ -122,10 +122,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      const response = await axios.post<AuthResponse>("/auth/login", {
-        email,
-        password,
-      });
+      const response = await axios.post<AuthResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        {
+          email,
+          password,
+        }
+      );
 
       const { user: userInfo, token: authToken } = response.data;
 
@@ -174,11 +177,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      const response = await axios.post<AuthResponse>("/auth/register", {
-        fullName,
-        email,
-        password,
-      });
+      const response = await axios.post<AuthResponse>(
+        API_ENDPOINTS.AUTH.REGISTER,
+        {
+          fullName,
+          email,
+          password,
+        }
+      );
 
       const { user: userInfo, token: authToken } = response.data;
 
