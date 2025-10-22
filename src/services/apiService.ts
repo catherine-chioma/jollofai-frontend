@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { mockRecipes, mockIngredients, mockVendors, mockCommunityPosts, simulateApiDelay } from '../data/mockData';
+import { SearchParams, LocationParams, PantryItem, ApiResponse } from '../types/api';
+import { Recipe, CommunityPost } from '../types/models';
 
 const IS_OFFLINE_MODE = import.meta.env.VITE_OFFLINE_MODE === 'true';
 
@@ -25,22 +27,38 @@ api.interceptors.request.use((config) => {
 // API Service with offline mode support
 export class ApiService {
   // Recipe endpoints
-  static async getRecipes(params: any = {}) {
+  static async generateRecipes(ingredients: string, method: "text" | "voice" | "image" = "text"): Promise<ApiResponse<any>> {
+    if (IS_OFFLINE_MODE) {
+      await simulateApiDelay();
+      return { data: mockRecipes.slice(0, method === "image" ? 3 : 2) };
+    }
+    
+    try {
+      const response = await api.post('/recipes/generate', {
+        ingredients,
+        method,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+      throw error;
+    }
+  }
+
+  static async getRecipes(params: Partial<SearchParams> = {}): Promise<ApiResponse<any[]>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       let recipes = [...mockRecipes];
       
-      // Apply filters if provided
       if (params.cuisine) {
-        recipes = recipes.filter(r => r.cuisine.toLowerCase() === params.cuisine.toLowerCase());
+        recipes = recipes.filter(r => r.cuisine.toLowerCase() === params.cuisine!.toLowerCase());
       }
       if (params.difficulty) {
-        recipes = recipes.filter(r => r.difficulty.toLowerCase() === params.difficulty.toLowerCase());
+        recipes = recipes.filter(r => r.difficulty.toLowerCase() === params.difficulty!.toLowerCase());
       }
       if (params.search) {
         const searchTerm = params.search.toLowerCase();
         
-        // Log the search method for backend processing
         if (params.searchMethod) {
           console.log(`Recipe search via ${params.searchMethod}: "${searchTerm}"`);
         }
@@ -51,10 +69,7 @@ export class ApiService {
           r.tags.some(tag => tag.toLowerCase().includes(searchTerm))
         );
         
-        // Apply different filtering logic based on search method
         if (params.searchMethod === 'voice') {
-          // For voice search, we might want to be more lenient with matching
-          // and consider phonetic similarities or common voice-to-text errors
           recipes = recipes.filter(r => {
             const ingredients = r.ingredients?.join(' ').toLowerCase() || '';
             return r.title.toLowerCase().includes(searchTerm) ||
@@ -68,10 +83,11 @@ export class ApiService {
       return { data: recipes };
     }
     
-    return api.get('/recipes', { params });
+    const response = await api.get('/recipes', { params });
+    return response.data;
   }
 
-  static async getRecipe(id: string) {
+  static async getRecipe(id: string): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       const recipe = mockRecipes.find(r => r.id === id);
@@ -81,15 +97,25 @@ export class ApiService {
       return { data: recipe };
     }
     
-    return api.get(`/recipes/${id}`);
+    const response = await api.get(`/recipes/${id}`);
+    return response.data;
   }
 
-  static async createRecipe(recipeData: any) {
+  static async createRecipe(recipeData: Record<string, any>): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
-      const newRecipe = {
-        ...recipeData,
+      const newRecipe: Recipe = {
         id: String(mockRecipes.length + 1),
+        title: recipeData.title || '',
+        description: recipeData.description || '',
+        cuisine: recipeData.cuisine || 'Nigerian',
+        difficulty: recipeData.difficulty || 'Medium',
+        prepTime: recipeData.prepTime || 30,
+        cookTime: recipeData.cookTime || 45,
+        servings: recipeData.servings || 4,
+        ingredients: recipeData.ingredients || [],
+        instructions: recipeData.instructions || [],
+        image: recipeData.image || '/images/default-recipe.jpg',
         author: { 
           name: 'Demo User', 
           id: 'demo-user',
@@ -98,15 +124,18 @@ export class ApiService {
         rating: 0,
         reviews: 0,
         createdAt: new Date().toISOString(),
+        nutritionalInfo: recipeData.nutritionalInfo || {},
+        tags: recipeData.tags || []
       };
       mockRecipes.push(newRecipe);
       return { data: newRecipe };
     }
     
-    return api.post('/recipes', recipeData);
+    const response = await api.post('/recipes', recipeData);
+    return response.data;
   }
 
-  static async updateRecipe(id: string, recipeData: any) {
+  static async updateRecipe(id: string, recipeData: Record<string, any>): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       const index = mockRecipes.findIndex(r => r.id === id);
@@ -117,10 +146,11 @@ export class ApiService {
       return { data: mockRecipes[index] };
     }
     
-    return api.put(`/recipes/${id}`, recipeData);
+    const response = await api.put(`/recipes/${id}`, recipeData);
+    return response.data;
   }
 
-  static async deleteRecipe(id: string) {
+  static async deleteRecipe(id: string): Promise<ApiResponse<{ message: string }>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       const index = mockRecipes.findIndex(r => r.id === id);
@@ -131,53 +161,30 @@ export class ApiService {
       return { data: { message: 'Recipe deleted successfully' } };
     }
     
-    return api.delete(`/recipes/${id}`);
-  }
-
-  // Ingredient endpoints
-  static async getIngredients(params: any = {}) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      let ingredients = [...mockIngredients];
-      
-      if (params.category) {
-        ingredients = ingredients.filter(i => 
-          i.category.toLowerCase() === params.category.toLowerCase()
-        );
-      }
-      if (params.search) {
-        const searchTerm = params.search.toLowerCase();
-        ingredients = ingredients.filter(i => 
-          i.name.toLowerCase().includes(searchTerm) ||
-          i.description.toLowerCase().includes(searchTerm)
-        );
-      }
-      
-      return { data: ingredients };
-    }
-    
-    return api.get('/ingredients', { params });
+    const response = await api.delete(`/recipes/${id}`);
+    return response.data;
   }
 
   // Vendor endpoints
-  static async getVendors(params: any = {}) {
+  static async getVendors(params: Partial<LocationParams> = {}): Promise<ApiResponse<any[]>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       let vendors = [...mockVendors];
       
       if (params.city) {
         vendors = vendors.filter(v => 
-          v.location.city.toLowerCase().includes(params.city.toLowerCase())
+          v.location.city.toLowerCase().includes(params.city!.toLowerCase())
         );
       }
       
       return { data: vendors };
     }
     
-    return api.get('/vendors/vendor/nearby', { params });
+    const response = await api.get('/vendors/vendor/nearby', { params });
+    return response.data;
   }
 
-  static async getVendor(id: string) {
+  static async getVendor(id: string): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       const vendor = mockVendors.find(v => v.id === id);
@@ -187,129 +194,12 @@ export class ApiService {
       return { data: vendor };
     }
     
-    return api.get(`/vendors/vendor/${id}`);
-  }
-
-  // User/Profile endpoints
-  static async getUserProfile() {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      return {
-        data: {
-          id: 'demo-user',
-          name: 'Demo User',
-          email: 'demo@example.com',
-          avatar: '/images/demo-avatar.jpg',
-          preferences: {
-            cuisine: ['Nigerian', 'African'],
-            dietaryRestrictions: [],
-            spiceLevel: 'Medium'
-          },
-          stats: {
-            recipesCreated: 5,
-            recipesLiked: 23,
-            following: 12,
-            followers: 8
-          }
-        }
-      };
-    }
-    
-    return api.get('/users/profile');
-  }
-
-  static async updateUserProfile(profileData: any) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      // In offline mode, just return the updated data
-      return { data: { ...profileData, id: 'demo-user' } };
-    }
-    
-    return api.put('/users/profile', profileData);
-  }
-
-  // Meal planning endpoints
-  static async getMealPlan(date: string) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      return {
-        data: {
-          date,
-          meals: {
-            breakfast: mockRecipes[0],
-            lunch: mockRecipes[1],
-            dinner: mockRecipes[2]
-          }
-        }
-      };
-    }
-    
-    return api.get(`/meal-plans?date=${date}`);
-  }
-
-  static async createMealPlan(mealPlanData: any) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      return { data: { ...mealPlanData, id: String(Date.now()) } };
-    }
-    
-    return api.post('/meal-plans', mealPlanData);
-  }
-
-  // Shopping list endpoints
-  static async getShoppingList() {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      return {
-        data: {
-          items: [
-            { id: '1', name: 'Rice (3 cups)', category: 'Grains', completed: false },
-            { id: '2', name: 'Fresh Tomatoes (4 large)', category: 'Vegetables', completed: true },
-            { id: '3', name: 'Red Bell Peppers (2)', category: 'Vegetables', completed: false },
-            { id: '4', name: 'Palm Oil (3 tbsp)', category: 'Oils', completed: false }
-          ]
-        }
-      };
-    }
-    
-    return api.get('/pantry/shopping-list');
-  }
-
-  static async addToShoppingList(item: any) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      return { data: { ...item, id: String(Date.now()) } };
-    }
-    
-    return api.post('/pantry/shopping-list', item);
-  }
-
-  // AI Chat endpoints
-  static async sendChatMessage(message: string, recipeId?: string) {
-    if (IS_OFFLINE_MODE) {
-      await simulateApiDelay();
-      // Mock AI response
-      const responses = [
-        "That sounds delicious! For better flavor, try adding a pinch of thyme.",
-        "Great choice! Make sure to wash your rice properly before cooking.",
-        "Pro tip: Let your tomato stew cook until the oil separates for the best taste.",
-        "You can substitute palm oil with vegetable oil if needed, but palm oil gives the authentic flavor.",
-        "For spicier food, add more scotch bonnet peppers, but be careful - they're very hot!"
-      ];
-      
-      return {
-        data: {
-          message: responses[Math.floor(Math.random() * responses.length)],
-          timestamp: new Date().toISOString()
-        }
-      };
-    }
-    
-    return api.post('/ai/chat', { message, recipeId });
+    const response = await api.get(`/vendors/vendor/${id}`);
+    return response.data;
   }
 
   // Pantry endpoints
-  static async getPantryItems() {
+  static async getPantryItems(): Promise<ApiResponse<PantryItem[]>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       return {
@@ -321,20 +211,30 @@ export class ApiService {
       };
     }
     
-    return api.get('/pantry/items');
+    const response = await api.get('/pantry/items');
+    return response.data;
   }
 
-  static async addPantryItem(item: any) {
+  static async addPantryItem(item: Partial<PantryItem>): Promise<ApiResponse<PantryItem>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
-      return { data: { ...item, id: String(Date.now()) } };
+      return { 
+        data: { 
+          ...item, 
+          id: String(Date.now()),
+          name: item.name || '',
+          quantity: item.quantity || 0,
+          category: item.category || 'Other'
+        } as PantryItem 
+      };
     }
     
-    return api.post('/pantry/items', item);
+    const response = await api.post('/pantry/items', item);
+    return response.data;
   }
 
   // Community endpoints
-  static async getCommunityPosts(category?: string) {
+  static async getCommunityPosts(category?: string): Promise<ApiResponse<any[]>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       let posts = [...mockCommunityPosts];
@@ -347,15 +247,18 @@ export class ApiService {
     }
     
     const params = category && category !== 'all' ? { category } : {};
-    return api.get('/community/posts', { params });
+    const response = await api.get('/community/posts', { params });
+    return response.data;
   }
 
-  static async createCommunityPost(postData: any) {
+  static async createCommunityPost(postData: Record<string, any>): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
-      const newPost = {
+      const newPost: CommunityPost = {
         id: String(Date.now()),
-        ...postData,
+        title: postData.title || '',
+        content: postData.content || '',
+        category: postData.category || 'General',
         author: {
           id: '1',
           fullName: 'Current User',
@@ -365,29 +268,31 @@ export class ApiService {
         likedBy: [],
         comments: [],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        tags: postData.tags || []
       };
       mockCommunityPosts.unshift(newPost);
       return { data: newPost };
     }
     
-    return api.post('/community/posts', postData);
+    const response = await api.post('/community/posts', postData);
+    return response.data;
   }
 
-  static async likeCommunityPost(postId: string) {
+  static async likeCommunityPost(postId: string): Promise<ApiResponse<any>> {
     if (IS_OFFLINE_MODE) {
       await simulateApiDelay();
       const post = mockCommunityPosts.find(p => p.id === postId);
-      if (post) {
-        post.likes += 1;
-        post.likedBy = post.likedBy || [];
-        post.likedBy.push('1'); // Current user ID
+      if (!post) {
+        throw new Error('Post not found');
       }
+      post.likes += 1;
+      post.likedBy = post.likedBy || [];
+      post.likedBy.push('1'); // Current user ID
       return { data: post };
     }
     
-    return api.post(`/community/posts/${postId}/like`);
+    const response = await api.post(`/community/posts/${postId}/like`);
+    return response.data;
   }
 }
-
-export default ApiService;
